@@ -1,0 +1,61 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+        
+        "profile": {
+          ".validate": "newData.hasChildren(['email', 'displayName'])"
+        },
+        
+        "devices": {
+          "$deviceId": {
+            ".read": "$uid === auth.uid",
+            ".write": "$uid === auth.uid",
+            ".validate": "newData.hasChildren(['deviceId', 'deviceName', 'macAddress'])",
+            
+            "commands": {
+              ".read": true,
+              ".write": "$uid === auth.uid"
+            }
+          }
+        }
+      }
+    },
+    
+    "sensorData": {
+      "$deviceId": {
+        ".read": "root.child('deviceRegistry').child($deviceId).child('ownerUID').val() === auth.uid",
+        ".write": "root.child('deviceRegistry').child($deviceId).exists()",
+        
+        "$timestamp": {
+          ".validate": "newData.hasChildren(['timestamp', 'deviceId', 'temperature', 'humidity', 'airQuality']) && newData.child('deviceId').val() === $deviceId"
+        }
+      }
+    },
+    
+    "deviceRegistry": {
+      "$deviceId": {
+        ".read": "data.child('ownerUID').val() === auth.uid",
+        ".write": "data.child('ownerUID').val() === auth.uid || (!data.exists() && newData.child('ownerUID').val() === auth.uid)",
+        ".validate": "newData.hasChildren(['deviceId', 'ownerUID', 'deviceName']) && newData.child('deviceId').val() === $deviceId"
+      }
+    },
+    
+    "alerts": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+        
+        "$alertId": {
+          ".validate": "newData.hasChildren(['deviceId', 'type', 'message', 'timestamp'])"
+        }
+      }
+    }
+  }
+}
+

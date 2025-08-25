@@ -1,0 +1,55 @@
+{
+  "rules": {
+    "devices": {
+      ".indexOn": ["ownerId", "status", "type", "createdAt"],
+      "$deviceId": {
+        ".read": "auth != null && (data.child('ownerId').val() == auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+        ".write": "auth != null && (data.child('ownerId').val() == auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+        "registration_response": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        },
+        "status": {
+          ".read": "auth != null && (root.child('devices').child($deviceId).child('ownerId').val() == auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+          ".write": "auth != null && (root.child('devices').child($deviceId).child('ownerId').val() == auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')"
+        },
+        "config_status": {
+          ".read": "auth != null && (root.child('devices').child($deviceId).child('ownerId').val() == auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+          ".write": "auth != null && (root.child('devices').child($deviceId).child('ownerId').val() == auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')"
+        },
+        "current": {
+          ".read": "auth != null && (root.child('devices').child($deviceId).child('ownerId').val() == auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+          ".write": "auth != null && (root.child('devices').child($deviceId).child('ownerId').val() == auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')"
+        },
+        "history": {
+          ".read": "auth != null && (root.child('devices').child($deviceId).child('ownerId').val() == auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+          ".write": "auth != null && (root.child('devices').child($deviceId).child('ownerId').val() == auth.uid || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+          ".indexOn": ["timestamp", "deviceId"]
+        }
+      }
+    },
+    "commands": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "register-device": {
+        ".indexOn": ["timestamp", "userId"]
+      },
+      "configure-wifi": {
+        ".indexOn": ["timestamp", "userId"]
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    "groups": {
+      ".indexOn": ["ownerId", "createdAt"],
+      "$groupId": {
+        ".read": "auth != null && (data.child('ownerId').val() == auth.uid || data.child('members').child(auth.uid).exists())",
+        ".write": "auth != null && data.child('ownerId').val() == auth.uid"
+      }
+    }
+  }
+}

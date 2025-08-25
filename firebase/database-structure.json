@@ -1,0 +1,72 @@
+{
+  "firebase_database_structure": {
+    "comment": "Cấu trúc Firebase Realtime Database cho IoT Air Monitor System",
+    "users": {
+      "{userUID}": {
+        "profile": {
+          "email": "user@example.com",
+          "displayName": "User Name",
+          "createdAt": "timestamp",
+          "lastLogin": "timestamp"
+        },
+        "devices": {
+          "{deviceId}": {
+            "deviceId": "ESP32-AirMonitor-ABC123",
+            "deviceName": "Living Room Air Monitor",
+            "macAddress": "AA:BB:CC:DD:EE:FF",
+            "ipAddress": "192.168.1.100",
+            "wifiSSID": "HomeWiFi",
+            "status": "online",
+            "lastSeen": "timestamp",
+            "firmware": "1.0.0",
+            "location": "Living Room",
+            "createdAt": "timestamp",
+            "commands": {
+              "restart": false,
+              "reset": false,
+              "updateInterval": 30,
+              "location": "New Location"
+            }
+          }
+        }
+      }
+    },
+    "sensorData": {
+      "{deviceId}": {
+        "{timestamp}": {
+          "timestamp": "timestamp",
+          "deviceId": "ESP32-AirMonitor-ABC123",
+          "temperature": 25.5,
+          "humidity": 65.2,
+          "airQuality": 45.8,
+          "status": "online"
+        }
+      }
+    },
+    "deviceRegistry": {
+      "comment": "Global device registry for quick lookups",
+      "{deviceId}": {
+        "deviceId": "ESP32-AirMonitor-ABC123",
+        "ownerUID": "{userUID}",
+        "deviceName": "Living Room Air Monitor",
+        "status": "online",
+        "lastSeen": "timestamp",
+        "registeredAt": "timestamp"
+      }
+    },
+    "alerts": {
+      "{userUID}": {
+        "{alertId}": {
+          "deviceId": "ESP32-AirMonitor-ABC123",
+          "type": "temperature_high",
+          "message": "Temperature exceeded 30°C",
+          "value": 32.5,
+          "threshold": 30.0,
+          "timestamp": "timestamp",
+          "acknowledged": false
+        }
+      }
+    }
+  }
+}
+

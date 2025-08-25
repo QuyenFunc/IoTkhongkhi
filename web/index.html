@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="iot_air_quality_monitor">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>IoT Air Quality Monitor</title>
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Firebase Configuration -->
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getDatabase } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // Your web app's Firebase configuration
+   const firebaseConfig = {
+  apiKey: "AIzaSyDL1iwM9wuJzg2fw2mP-aIM69Y16fU6Kdg",
+  authDomain: "iotsmart-7a145.firebaseapp.com",
+  databaseURL: "https://iotsmart-7a145-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "iotsmart-7a145",
+  storageBucket: "iotsmart-7a145.firebasestorage.app",
+  messagingSenderId: "537162740770",
+  appId: "1:537162740770:web:cd386961de8dc193c3467b",
+  measurementId: "G-8TCSRL582M"
+};
+
+    // Initialize Firebase only if not already initialized
+    let app;
+    if (getApps().length === 0) {
+      app = initializeApp(firebaseConfig);
+      console.log('Firebase initialized for web');
+    } else {
+      app = getApps()[0];
+      console.log('Firebase already initialized, using existing app');
+    }
+
+    const auth = getAuth(app);
+    const database = getDatabase(app);
+
+    // Make Firebase available globally
+    window.firebaseApp = app;
+    window.firebaseAuth = auth;
+    window.firebaseDatabase = database;
+  </script>
+</head>
+<body>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

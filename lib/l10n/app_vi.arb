@@ -1,0 +1,83 @@
+{
+  "@@locale": "vi",
+  "appTitle": "Giám Sát Chất Lượng Không Khí IoT",
+  "@appTitle": {
+    "description": "Tiêu đề ứng dụng"
+  },
+  
+  "welcome": "Chào mừng",
+  "login": "Đăng nhập",
+  "register": "Đăng ký",
+  "logout": "Đăng xuất",
+  "email": "Email",
+  "password": "Mật khẩu",
+  "confirmPassword": "Xác nhận mật khẩu",
+  "forgotPassword": "Quên mật khẩu?",
+  "resetPassword": "Đặt lại mật khẩu",
+  "signInWithGoogle": "Đăng nhập với Google",
+  "signInWithFacebook": "Đăng nhập với Facebook",
+  "signInWithApple": "Đăng nhập với Apple",
+  
+  "dashboard": "Bảng điều khiển",
+  "devices": "Thiết bị",
+  "monitoring": "Giám sát",
+  "alerts": "Cảnh báo",
+  "settings": "Cài đặt",
+  "profile": "Hồ sơ",
+  
+  "addDevice": "Thêm thiết bị",
+  "scanQRCode": "Quét mã QR",
+  "deviceName": "Tên thiết bị",
+  "deviceLocation": "Vị trí thiết bị",
+  "deviceStatus": "Trạng thái thiết bị",
+  "online": "Trực tuyến",
+  "offline": "Ngoại tuyến",
+  "lastUpdate": "Cập nhật cuối",
+  
+  "temperature": "Nhiệt độ",
+  "humidity": "Độ ẩm",
+  "airQuality": "Chất lượng không khí",
+  "pressure": "Áp suất",
+  
+  "hour1": "1 giờ",
+  "hours24": "24 giờ",
+  "days7": "7 ngày",
+  "days30": "30 ngày",
+  
+  "export": "Xuất dữ liệu",
+  "share": "Chia sẻ",
+  "analytics": "Phân tích",
+  "reports": "Báo cáo",
+  
+  "thresholdSettings": "Cài đặt ngưỡng",
+  "notifications": "Thông báo",
+  "connectivity": "Kết nối",
+  "theme": "Giao diện",
+  "language": "Ngôn ngữ",
+  
+  "lightMode": "Chế độ sáng",
+  "darkMode": "Chế độ tối",
+  "systemMode": "Theo hệ thống",
+  
+  "save": "Lưu",
+  "cancel": "Hủy",
+  "delete": "Xóa",
+  "edit": "Chỉnh sửa",
+  "refresh": "Làm mới",
+  "loading": "Đang tải...",
+  "error": "Lỗi",
+  "success": "Thành công",
+  "warning": "Cảnh báo",
+  "info": "Thông tin",
+  
+  "noDevicesFound": "Không tìm thấy thiết bị nào",
+  "noDataAvailable": "Không có dữ liệu",
+  "connectionError": "Lỗi kết nối",
+  "invalidCredentials": "Thông tin đăng nhập không hợp lệ",
+  "networkError": "Lỗi mạng",
+  
+  "confirmDelete": "Xác nhận xóa",
+  "deleteDeviceMessage": "Bạn có chắc chắn muốn xóa thiết bị này?",
+  "yes": "Có",
+  "no": "Không"
+}

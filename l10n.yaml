@@ -1,0 +1,13 @@
+arb-dir: lib/l10n
+template-arb-file: app_vi.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+output-dir: lib/l10n/generated
+nullable-getter: false
+header: |
+  /// Generated file. Do not edit.
+  ///
+  /// Original file: lib/l10n/app_vi.arb
+  /// To regenerate, run: `flutter gen-l10n`
+  ///
+  /// Localization for IoT Air Quality Monitor App

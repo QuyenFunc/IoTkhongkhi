@@ -1,0 +1,1 @@
+ C:\\Users\\Admin\\Documents\\Workspace\\IOTKHONGKHI\\lib\\l10n\\generated\\app_localizations_vi.dart C:\\Users\\Admin\\Documents\\Workspace\\IOTKHONGKHI\\lib\\l10n\\generated\\app_localizations.dart:  C:\\Users\\Admin\\Documents\\Workspace\\IOTKHONGKHI\\l10n.yaml C:\\Users\\Admin\\Documents\\Workspace\\IOTKHONGKHI\\lib\\l10n\\app_vi.arb

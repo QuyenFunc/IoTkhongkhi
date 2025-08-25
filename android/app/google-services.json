@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "537162740770",
+    "project_id": "iotsmart-7a145",
+    "firebase_url": "https://iotsmart-7a145-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "storage_bucket": "iotsmart-7a145.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:537162740770:android:eeb1fb95ac25e897c3467b",
+        "android_client_info": {
+          "package_name": "iot.app.air"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDntHJ1ncMgoyVr39BrFA3T2xtrvz5ZD7g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
