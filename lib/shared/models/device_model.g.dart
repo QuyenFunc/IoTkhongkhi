@@ -41,7 +41,7 @@ Map<String, dynamic> _$DeviceModelToJson(DeviceModel instance) =>
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
       'lastSeenAt': instance.lastSeenAt?.toIso8601String(),
-      'configuration': instance.configuration.toJson(),
+      'configuration': instance.configuration,
       'capabilities': instance.capabilities,
       'metadata': instance.metadata,
     };
@@ -50,6 +50,7 @@ const _$DeviceTypeEnumMap = {
   DeviceType.esp32: 'esp32',
   DeviceType.arduino: 'arduino',
   DeviceType.raspberryPi: 'raspberry_pi',
+  DeviceType.airQuality: 'air_quality',
   DeviceType.custom: 'custom',
   DeviceType.other: 'other',
 };
@@ -79,7 +80,7 @@ Map<String, dynamic> _$DeviceConfigurationToJson(
     <String, dynamic>{
       'mqttTopic': instance.mqttTopic,
       'reportingInterval': instance.reportingInterval,
-      'thresholds': instance.thresholds.toJson(),
+      'thresholds': instance.thresholds,
       'alertsEnabled': instance.alertsEnabled,
       'alertRecipients': instance.alertRecipients,
       'customSettings': instance.customSettings,

@@ -13,6 +13,7 @@
         },
         
         "devices": {
+          ".indexOn": ["ownerId"],
           "$deviceId": {
             ".read": "$uid === auth.uid",
             ".write": "$uid === auth.uid",
@@ -27,18 +28,34 @@
       }
     },
     
+    "pendingDevices": {
+      ".read": true,
+      ".write": true,
+      "$deviceId": {
+        ".validate": "newData.hasChildren(['deviceId', 'userKey', 'macAddress'])"
+      }
+    },
+    
     "sensorData": {
       "$deviceId": {
         ".read": "root.child('deviceRegistry').child($deviceId).child('ownerUID').val() === auth.uid",
         ".write": "root.child('deviceRegistry').child($deviceId).exists()",
         
-        "$timestamp": {
+        "latest": {
           ".validate": "newData.hasChildren(['timestamp', 'deviceId', 'temperature', 'humidity', 'airQuality']) && newData.child('deviceId').val() === $deviceId"
+        },
+        
+        "history": {
+          ".indexOn": ["timestamp"],
+          "$timestamp": {
+            ".validate": "newData.hasChildren(['timestamp', 'deviceId', 'temperature', 'humidity', 'airQuality']) && newData.child('deviceId').val() === $deviceId"
+          }
         }
       }
     },
     
     "deviceRegistry": {
+      ".indexOn": ["ownerUID"],
       "$deviceId": {
         ".read": "data.child('ownerUID').val() === auth.uid",
         ".write": "data.child('ownerUID').val() === auth.uid || (!data.exists() && newData.child('ownerUID').val() === auth.uid)",
@@ -50,6 +67,7 @@
       "$uid": {
         ".read": "$uid === auth.uid",
         ".write": "$uid === auth.uid",
+        ".indexOn": ["timestamp"],
         
         "$alertId": {
           ".validate": "newData.hasChildren(['deviceId', 'type', 'message', 'timestamp'])"

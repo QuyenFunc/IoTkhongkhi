@@ -80,7 +80,7 @@ class _DeviceDiscoveryScreenState extends State<DeviceDiscoveryScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DeviceSetupScreen(setupDevice: device),
+        builder: (context) => const DeviceSetupScreen(),
       ),
     );
   }

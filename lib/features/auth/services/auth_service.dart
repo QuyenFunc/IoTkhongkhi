@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import '../../../shared/models/user_model.dart';
 
 
@@ -27,6 +28,7 @@ class AuthService {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseDatabase _database = FirebaseDatabase.instance;
+  final Uuid _uuid = const Uuid();
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     // Configure for both web and Android
     scopes: ['email', 'profile'],
@@ -39,6 +41,12 @@ class AuthService {
   
   // Auth state stream
   Stream<User?> get authStateChanges => _auth.authStateChanges();
+  
+  // Generate unique user key for device pairing
+  String _generateUserKey() {
+    // Generate a UUID-based user key with prefix for easy identification
+    return 'USR_${_uuid.v4().replaceAll('-', '').substring(0, 12).toUpperCase()}';
+  }
 
   // Register with email and password
   Future<UserCredential> registerWithEmailAndPassword({
@@ -225,6 +233,7 @@ class AuthService {
         name: fullName,
         phoneNumber: phoneNumber,
         profileImageUrl: user.photoURL,
+        userKey: _generateUserKey(), // Generate unique key for device pairing
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         isEmailVerified: user.emailVerified,
@@ -258,7 +267,22 @@ class AuthService {
     try {
       final snapshot = await _database.ref('users/$userId').get();
       if (snapshot.exists) {
-        return UserModel.fromJson(Map<String, dynamic>.from(snapshot.value as Map));
+        final userData = Map<String, dynamic>.from(snapshot.value as Map);
+        
+        // Fix for old users without userKey - generate and update
+        if (userData['userKey'] == null || userData['userKey'].toString().isEmpty) {
+          final newUserKey = _generateUserKey();
+          userData['userKey'] = newUserKey;
+          
+          // Update user in database with new userKey
+          await _database.ref('users/$userId/userKey').set(newUserKey);
+          
+          if (kDebugMode) {
+            print('🔧 Generated new userKey for existing user: $newUserKey');
+          }
+        }
+        
+        return UserModel.fromJson(userData);
       }
       return null;
     } catch (e) {

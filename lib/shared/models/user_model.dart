@@ -10,6 +10,7 @@ class UserModel extends Equatable {
   final String name;
   final String? phoneNumber;
   final String? profileImageUrl;
+  final String userKey; // Unique key for device pairing
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isEmailVerified;
@@ -22,6 +23,7 @@ class UserModel extends Equatable {
     required this.name,
     this.phoneNumber,
     this.profileImageUrl,
+    required this.userKey,
     required this.createdAt,
     required this.updatedAt,
     required this.isEmailVerified,
@@ -39,6 +41,7 @@ class UserModel extends Equatable {
     String? name,
     String? phoneNumber,
     String? profileImageUrl,
+    String? userKey,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isEmailVerified,
@@ -50,6 +53,7 @@ class UserModel extends Equatable {
       name: name ?? this.name,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      userKey: userKey ?? this.userKey,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
@@ -64,6 +68,7 @@ class UserModel extends Equatable {
         name,
         phoneNumber,
         profileImageUrl,
+        userKey,
         createdAt,
         updatedAt,
         isEmailVerified,

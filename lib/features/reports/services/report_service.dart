@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -7,7 +6,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:csv/csv.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../../shared/models/device_model.dart';
 
 class ReportService {
@@ -16,7 +14,6 @@ class ReportService {
   ReportService._internal();
 
   final FirebaseDatabase _database = FirebaseDatabase.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   /// Generate PDF report for device data
   Future<File> generatePDFReport({

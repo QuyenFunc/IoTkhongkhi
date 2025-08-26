@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../shared/models/user_model.dart';
 import '../services/user_service.dart';
 import '../../../core/routes/app_routes.dart';
@@ -289,6 +290,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               label: 'Cập nhật lần cuối',
               value: _formatDate(profile.updatedAt),
             ),
+            
+            const Divider(height: 24),
+            
+            // Device Pairing Section
+            _buildUserKeySection(profile),
           ],
         ),
       ),
@@ -324,6 +330,107 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildUserKeySection(UserModel profile) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.devices, size: 20, color: Colors.blue[600]),
+            const SizedBox(width: 8),
+            const Text(
+              'Ghép nối thiết bị',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 12),
+        
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.05),
+            border: Border.all(color: Colors.blue.withOpacity(0.2)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'User Key (Mã ghép nối)',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.blue,
+                ),
+              ),
+              
+              const SizedBox(height: 8),
+              
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: Text(
+                        profile.userKey,
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(width: 8),
+                  
+                  IconButton(
+                    icon: const Icon(Icons.copy, color: Colors.blue),
+                    onPressed: () => _copyUserKey(profile.userKey),
+                    tooltip: 'Sao chép User Key',
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 8),
+              
+              Text(
+                '💡 Sử dụng mã này khi thiết lập thiết bị ESP32 để tự động ghép nối',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _copyUserKey(String userKey) {
+    Clipboard.setData(ClipboardData(text: userKey));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('✅ User Key đã được sao chép!'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
       ),
     );
   }

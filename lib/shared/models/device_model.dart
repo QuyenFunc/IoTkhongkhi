@@ -241,6 +241,8 @@ enum DeviceType {
   arduino,
   @JsonValue('raspberry_pi')
   raspberryPi,
+  @JsonValue('air_quality')
+  airQuality,
   @JsonValue('custom')
   custom,
   @JsonValue('other')
@@ -267,6 +269,8 @@ extension DeviceTypeExtension on DeviceType {
         return 'Arduino';
       case DeviceType.raspberryPi:
         return 'Raspberry Pi';
+      case DeviceType.airQuality:
+        return 'Cảm biến chất lượng không khí';
       case DeviceType.custom:
         return 'Tùy chỉnh';
       case DeviceType.other:
@@ -282,6 +286,8 @@ extension DeviceTypeExtension on DeviceType {
         return 'Bo mạch Arduino với các cảm biến';
       case DeviceType.raspberryPi:
         return 'Máy tính nhỏ Raspberry Pi';
+      case DeviceType.airQuality:
+        return 'Thiết bị đo chất lượng không khí với cảm biến PM2.5, PM10, CO2';
       case DeviceType.custom:
         return 'Thiết bị tùy chỉnh khác';
       case DeviceType.other:

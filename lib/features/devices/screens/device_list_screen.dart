@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/models/device_model.dart' as device_models;
 import '../services/device_service.dart';
-import 'device_discovery_screen.dart';
 import 'device_detail_screen.dart';
+import 'device_setup_screen.dart';
 // import 'test_qr_screen.dart'; // Removed for production
 
 class DeviceListScreen extends StatefulWidget {
@@ -285,13 +285,20 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     );
   }
 
-  void _navigateToAddDevice() {
-    Navigator.push(
+  void _navigateToAddDevice() async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const DeviceDiscoveryScreen(),
+        builder: (context) => const DeviceSetupScreen(),
       ),
     );
+    
+    // If device was added successfully, refresh the list
+    if (result == true && mounted) {
+      setState(() {
+        // Trigger rebuild to refresh device list
+      });
+    }
   }
 
   void _navigateToDeviceDetail(device_models.DeviceModel device) {
@@ -456,6 +463,8 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
         return Icons.memory;
       case device_models.DeviceType.raspberryPi:
         return Icons.computer;
+      case device_models.DeviceType.airQuality:
+        return Icons.air;
       case device_models.DeviceType.custom:
         return Icons.device_unknown;
       case device_models.DeviceType.other:

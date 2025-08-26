@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:air_quality/features/user/services/user_service.dart';
 import 'package:air_quality/shared/models/user_model.dart';
 import 'package:air_quality/shared/widgets/custom_button.dart';
@@ -28,7 +27,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _phoneController = TextEditingController();
   
   final UserService _userService = UserService();
-  final ImagePicker _imagePicker = ImagePicker();
   
   bool _isLoading = false;
   File? _selectedImage;
@@ -55,31 +53,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 512,
-        maxHeight: 512,
-        imageQuality: 80,
-      );
 
-      if (image != null) {
-        setState(() {
-          _selectedImage = File(image.path);
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi chọn ảnh: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;

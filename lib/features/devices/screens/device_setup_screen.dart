@@ -1,235 +1,487 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/device_setup_service.dart';
-import '../services/bluetooth_setup_service.dart';
-import '../../../shared/widgets/custom_text_field.dart';
-import '../../../shared/widgets/custom_button.dart';
+import '../services/esp32_wifi_service.dart';
+import '../services/device_pairing_service.dart';
+import '../../user/services/user_service.dart';
 
 class DeviceSetupScreen extends StatefulWidget {
-  final SetupDevice? setupDevice;
-
-  const DeviceSetupScreen({
-    super.key,
-    this.setupDevice,
-  });
+  const DeviceSetupScreen({super.key});
 
   @override
   State<DeviceSetupScreen> createState() => _DeviceSetupScreenState();
 }
 
 class _DeviceSetupScreenState extends State<DeviceSetupScreen> {
-  final DeviceSetupService _setupService = DeviceSetupService();
-  final BluetoothSetupService _bluetoothService = BluetoothSetupService();
+  final ESP32WiFiService _wifiService = ESP32WiFiService();
+  final DevicePairingService _pairingService = DevicePairingService();
+  final UserService _userService = UserService();
+  
   final PageController _pageController = PageController();
+  final TextEditingController _wifiPasswordController = TextEditingController();
   
-  // Form controllers
-  final _wifiSSIDController = TextEditingController();
-  final _wifiPasswordController = TextEditingController();
-  final _deviceNameController = TextEditingController();
-  final _locationController = TextEditingController();
-  
-  // State
   int _currentStep = 0;
   bool _isLoading = false;
-  DeviceSetupInfo? _deviceInfo;
   String? _errorMessage;
-
-  final List<String> _stepTitles = [
-    'Connect to Device',
-    'Device Information',
-    'WiFi Configuration',
-    'Device Settings',
-    'Complete Setup',
-  ];
+  String? _selectedESP32Network;
+  String? _selectedWiFiNetwork;
+  String? _userKey;
+  List<String> _esp32Networks = [];
+  List<Map<String, dynamic>> _wifiNetworks = [];
 
   @override
   void initState() {
     super.initState();
-    _initializeSetup();
+    _startSetupProcess();
   }
 
   @override
   void dispose() {
-    _wifiSSIDController.dispose();
     _wifiPasswordController.dispose();
-    _deviceNameController.dispose();
-    _locationController.dispose();
     _pageController.dispose();
     super.dispose();
   }
 
-  Future<void> _initializeSetup() async {
-    if (widget.setupDevice != null) {
-      _deviceNameController.text = widget.setupDevice!.displayName;
-    }
-
-    // Check if already connected to setup hotspot
-    final isConnected = await _setupService.isConnectedToSetupHotspot();
-    if (isConnected) {
-      setState(() {
-        _currentStep = 1;
-      });
-      _pageController.animateToPage(1, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-      await _getDeviceInfo();
+  void _startSetupProcess() async {
+    // Get user key from user profile instead of generating new one
+    try {
+      if (kDebugMode) {
+        print('🔑 Getting userKey from user profile...');
+      }
+      
+      final userProfile = await _userService.getCurrentUserProfile();
+      if (userProfile != null && userProfile.userKey.isNotEmpty) {
+        _userKey = userProfile.userKey;
+        if (kDebugMode) {
+          print('✅ Using existing userKey: ${_userKey!.substring(0, 8)}***');
+        }
+      } else {
+        // Fallback: generate new userKey if not found
+        _userKey = _pairingService.generateUserKey();
+        if (kDebugMode) {
+          print('⚠️ Generated new userKey as fallback: ${_userKey!.substring(0, 8)}***');
+        }
+      }
+      
+      _scanForESP32Networks();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error: User not authenticated. Please login first.';
+        });
+      }
     }
   }
 
-  Future<void> _getDeviceInfo() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  Future<void> _scanForESP32Networks() async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
-      final deviceInfo = await _setupService.getDeviceSetupInfo();
-      if (deviceInfo != null) {
+      // Use real WiFi scanning instead of mock data
+      final detailedNetworks = await _wifiService.getAvailableESP32Networks();
+      final networks = detailedNetworks.map((n) => n['ssid'] as String).toList();
+      
+      if (mounted) {
         setState(() {
-          _deviceInfo = deviceInfo;
-          _deviceNameController.text = 'Air Monitor ${deviceInfo.deviceId}';
+          _esp32Networks = networks;
+          _isLoading = false;
         });
-      } else {
+      }
+      
+      if (networks.isEmpty && mounted) {
         setState(() {
-          _errorMessage = 'Could not connect to device setup interface';
+          _errorMessage = 'No ESP32 setup networks found. Make sure your ESP32 device is powered on and in setup mode.';
         });
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Error getting device information: $e';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _nextStep() async {
-    if (_currentStep < _stepTitles.length - 1) {
-      switch (_currentStep) {
-        case 0:
-          await _handleConnectStep();
-          break;
-        case 1:
-          await _handleDeviceInfoStep();
-          break;
-        case 2:
-          await _handleWiFiConfigStep();
-          break;
-        case 3:
-          await _handleDeviceSettingsStep();
-          break;
-        case 4:
-          await _handleCompleteSetup();
-          break;
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to scan for ESP32 networks: $e\n\nTip: Make sure WiFi location permission is granted and location services are enabled.';
+          _isLoading = false;
+        });
       }
     }
   }
 
-  Future<void> _handleConnectStep() async {
-    // Guide user to connect to WiFi hotspot
-    _goToNextStep();
-  }
-
-  Future<void> _handleDeviceInfoStep() async {
-    if (_deviceInfo == null) {
-      await _getDeviceInfo();
-      if (_deviceInfo == null) return;
-    }
-    _goToNextStep();
-  }
-
-  Future<void> _handleWiFiConfigStep() async {
-    if (!_validateWiFiForm()) return;
-
+  Future<void> _connectToESP32Network(String networkName) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _selectedESP32Network = networkName;
     });
 
     try {
-      final config = DeviceWiFiConfig(
-        ssid: _wifiSSIDController.text.trim(),
-        password: _wifiPasswordController.text,
-      );
-
-      final success = await _setupService.configureDeviceWiFi(config);
+      // Attempt to connect to ESP32 WiFi
+      final success = await _wifiService.connectToESP32WiFi(networkName);
+      
       if (success) {
-        _goToNextStep();
+        // Successfully connected, scan for available WiFi networks
+        await _scanWiFiNetworks();
+        _nextStep();
       } else {
+        // Connection failed, show manual instructions
         setState(() {
-          _errorMessage = 'Failed to configure WiFi. Please check credentials.';
+          _isLoading = false;
         });
+        _showManualConnectionDialog(networkName);
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Error configuring WiFi: $e';
-      });
-    } finally {
-      setState(() {
+        _errorMessage = 'Error connecting to ESP32: $e';
         _isLoading = false;
+      });
+      
+      // Still show manual instructions as fallback
+      _showManualConnectionDialog(networkName);
+    }
+  }
+
+  void _showManualConnectionDialog(String networkName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.settings_applications, color: Colors.blue[600]),
+            const SizedBox(width: 8),
+            const Text('Manual WiFi Connection'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Please connect to your ESP32 device manually:'),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('📡 Network Name:', style: TextStyle(color: Colors.blue[800], fontWeight: FontWeight.bold)),
+                  Text(networkName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  Text('🔐 Password:', style: TextStyle(color: Colors.blue[800], fontWeight: FontWeight.bold)),
+                  const Text('12345678', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('Steps to connect:'),
+            const SizedBox(height: 8),
+            const Text('1. 📱 Open your phone\'s WiFi settings'),
+            const Text('2. 🔍 Find and tap on the ESP32 network above'),
+            const Text('3. 🔑 Enter password "12345678"'),
+            const Text('4. ✅ Wait for connection to complete'),
+            const Text('5. 🔄 Return to this app and tap "Continue"'),
+            const SizedBox(height: 16),
+            
+            // CRITICAL WARNING about Android auto-switching
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red[300]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.warning, color: Colors.red[700], size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'QUAN TRỌNG!',
+                        style: TextStyle(
+                          color: Colors.red[700],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Android sẽ TỰ ĐỘNG CHUYỂN sang 4G/WiFi khác khi ESP32 không có internet!',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '✅ Để tránh lỗi "connection abort":\n'
+                    '• TẮT dữ liệu di động (4G/5G) tạm thời\n'
+                    '• TẮT "Tự động chuyển mạng" trong WiFi settings\n'
+                    '• Giữ kết nối với ESP32 trong suốt quá trình cấu hình',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.orange[700], size: 16),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'If you don\'t see the network, make sure the ESP32 is powered on and showing "SETUP MODE" on its display.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _isLoading = false;
+              });
+            },
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              setState(() {
+                _isLoading = true;
+              });
+              
+              // Check connection with retry logic
+              bool isConnected = false;
+              for (int i = 0; i < 5; i++) {
+                isConnected = await _wifiService.isConnectedToESP32AP();
+                if (isConnected) break;
+                await Future.delayed(const Duration(seconds: 1));
+              }
+              
+              if (isConnected) {
+                await _scanWiFiNetworks();
+                _nextStep();
+              } else {
+                setState(() {
+                  _errorMessage = 'Still not connected to ESP32. Please make sure you\'re connected to "$networkName" and try again.';
+                  _isLoading = false;
+                });
+              }
+            },
+            child: const Text('I\'m Connected - Continue'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _scanWiFiNetworks() async {
+    try {
+      final networks = await _wifiService.scanWiFiNetworks();
+      setState(() {
+        _wifiNetworks = networks;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to scan WiFi networks: $e';
       });
     }
   }
 
-  Future<void> _handleDeviceSettingsStep() async {
-    if (!_validateDeviceSettingsForm()) return;
-    _goToNextStep();
-  }
+  Future<void> _configureDevice() async {
+    if (_selectedWiFiNetwork == null || _wifiPasswordController.text.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please select a WiFi network and enter the password';
+      });
+      return;
+    }
 
-  Future<void> _handleCompleteSetup() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        throw Exception('User not authenticated');
+      // Auto fetch userKey if not generated yet
+      _userKey ??= _pairingService.generateUserKey();
+
+      // Get current user UID for Firebase authentication
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      final userUID = currentUser.uid;
+      
+      if (kDebugMode) {
+        print('🔑 Using UserKey: ${_userKey!.substring(0, 8)}***');
+        print('👤 Using UserUID: ${userUID.substring(0, 8)}***');
       }
 
-      // Configure Firebase
-      final firebaseConfig = DeviceFirebaseConfig(
-        projectId: 'iotsmart-7a145',
-        databaseURL: 'https://iotsmart-7a145-default-rtdb.asia-southeast1.firebasedatabase.app',
-        apiKey: 'your-api-key', // You'll need to get this from Firebase console
+      // Run end-to-end setup without browser
+      final ok = await _wifiService.setupDeviceEndToEnd(
+        esp32Ssid: _selectedESP32Network!,
+        homeSsid: _selectedWiFiNetwork!,
+        homePassword: _wifiPasswordController.text,
+        userKey: _userKey!,
+        userUID: userUID,
       );
 
-      final firebaseSuccess = await _setupService.configureDeviceFirebase(firebaseConfig);
-      if (!firebaseSuccess) {
-        throw Exception('Failed to configure Firebase');
-      }
-
-      // Complete setup
-      final completeConfig = CompleteSetupConfig(
-        deviceId: _deviceInfo?.deviceId ?? widget.setupDevice?.deviceId ?? 'unknown',
-        deviceName: _deviceNameController.text.trim(),
-        location: _locationController.text.trim(),
-        ownerId: user.uid,
-      );
-
-      final success = await _setupService.completeDeviceSetup(completeConfig);
-      if (success) {
-        _showSuccessDialog();
+      if (ok) {
+        _nextStep(); // Waiting screen
+        _startDeviceDiscovery();
       } else {
         setState(() {
-          _errorMessage = 'Failed to complete setup. Please try again.';
+          _errorMessage = 'Failed to configure device. Please try again.';
+          _isLoading = false;
         });
       }
     } catch (e) {
+      // Enhanced error handling for connection abort issues
+      String errorMessage;
+      
+      if (e.toString().contains('Software caused connection abort') ||
+          e.toString().contains('Android keeps switching to mobile data')) {
+        errorMessage = '''
+🚨 ANDROID TỰ ĐỘNG CHUYỂN MẠNG!
+
+❌ Vấn đề: Android tự động chuyển sang 4G khi ESP32 không có internet
+
+✅ GIẢI PHÁP NGAY:
+1. 🔴 TẮT dữ liệu di động (Mobile Data)
+2. 🔄 Kết nối lại WiFi ESP32-Setup-XXXXXX  
+3. ✋ TẮT "Switch to mobile data" trong WiFi settings
+4. 🔄 Nhấn "Configure Device" để thử lại
+
+⚠️ Quan trọng: Giữ Mobile Data TẮT trong suốt quá trình setup!
+        ''';
+      } else if (e.toString().contains('TimeoutException')) {
+        errorMessage = '''
+⏰ TIMEOUT - ESP32 KHÔNG PHẢN HỒI
+
+💡 Nguyên nhân có thể:
+• ESP32 đang khởi động lại
+• Mất kết nối WiFi ESP32
+• ESP32 đang busy xử lý request khác
+
+✅ Giải pháp:
+1. Chờ 10-15 giây
+2. Kiểm tra kết nối WiFi ESP32-Setup-XXXXXX
+3. Thử lại
+        ''';
+      } else if (e.toString().contains('Not connected to ESP32 AP')) {
+        errorMessage = '''
+📡 MẤT KẾT NỐI ESP32
+
+❌ Không còn kết nối với mạng ESP32
+
+✅ Cách khắc phục:
+1. Mở Settings → WiFi
+2. Tìm và kết nối "ESP32-Setup-XXXXXX"
+3. Mật khẩu: 12345678
+4. Tắt Mobile Data
+5. Quay lại app và thử lại
+        ''';
+      } else {
+        errorMessage = 'Error configuring device: $e';
+      }
+      
       setState(() {
-        _errorMessage = 'Setup failed: $e';
-      });
-    } finally {
-      setState(() {
+        _errorMessage = errorMessage;
         _isLoading = false;
       });
     }
   }
 
-  void _goToNextStep() {
+  void _startDeviceDiscovery() {
+    if (_userKey == null) return;
+
+    // Listen for the device to appear in pendingDevices
+    _pairingService.listenForPendingDevice(_userKey!).listen(
+      (deviceData) {
+        if (deviceData != null) {
+          _onDeviceDiscovered(deviceData);
+        }
+      },
+      onError: (error) {
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'Error discovering device: $error';
+            _isLoading = false;
+          });
+        }
+      },
+    );
+
+    // Set timeout for device discovery
+    Future.delayed(const Duration(minutes: 3), () {
+      if (mounted && _currentStep == 2) {
+        setState(() {
+          _errorMessage = 'Device discovery timeout. Please try again.';
+          _isLoading = false;
+        });
+      }
+    });
+  }
+
+  Future<void> _onDeviceDiscovered(Map<String, dynamic> deviceData) async {
+    if (kDebugMode) {
+      print('🎉 Device discovered: $deviceData');
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Pair the device
+      final success = await _pairingService.pairDevice(
+        deviceId: deviceData['deviceId'],
+        deviceData: deviceData,
+        customDeviceName: 'ESP32 Air Monitor - ${deviceData['deviceId'].substring(6)}',
+      );
+
+      if (success) {
+        _nextStep(); // Go to success screen
+      } else {
+        setState(() {
+          _errorMessage = 'Failed to pair device. Please try again.';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error pairing device: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _nextStep() {
     setState(() {
       _currentStep++;
+      _isLoading = false;
+      _errorMessage = null;
     });
     _pageController.nextPage(
       duration: const Duration(milliseconds: 300),
@@ -237,10 +489,11 @@ class _DeviceSetupScreenState extends State<DeviceSetupScreen> {
     );
   }
 
-  void _goToPreviousStep() {
+  void _previousStep() {
     if (_currentStep > 0) {
       setState(() {
         _currentStep--;
+        _errorMessage = null;
       });
       _pageController.previousPage(
         duration: const Duration(milliseconds: 300),
@@ -249,537 +502,305 @@ class _DeviceSetupScreenState extends State<DeviceSetupScreen> {
     }
   }
 
-  bool _validateWiFiForm() {
-    if (_wifiSSIDController.text.trim().isEmpty) {
-      setState(() {
-        _errorMessage = 'Please enter WiFi network name';
-      });
-      return false;
-    }
-    return true;
-  }
-
-  bool _validateDeviceSettingsForm() {
-    if (_deviceNameController.text.trim().isEmpty) {
-      setState(() {
-        _errorMessage = 'Please enter device name';
-      });
-      return false;
-    }
-    if (_locationController.text.trim().isEmpty) {
-      setState(() {
-        _errorMessage = 'Please enter device location';
-      });
-      return false;
-    }
-    return true;
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Setup Complete!'),
-        content: const Text(
-          'Your air quality monitor has been successfully configured and added to your account.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).pop(); // Close setup screen
-              Navigator.of(context).pop(); // Close discovery screen
-            },
-            child: const Text('Done'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
       appBar: AppBar(
-        title: Text(_stepTitles[_currentStep]),
-        backgroundColor: theme.primaryColor,
-        foregroundColor: Colors.white,
-        leading: _currentStep > 0
+        title: const Text('Add New Device'),
+        leading: _currentStep > 0 && _currentStep < 3
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: _goToPreviousStep,
+                onPressed: _isLoading ? null : _previousStep,
               )
             : null,
       ),
       body: Column(
         children: [
-          _buildProgressIndicator(theme),
+          // Progress indicator
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: List.generate(4, (index) {
+                return Expanded(
+                  child: Container(
+                    height: 4,
+                    margin: EdgeInsets.only(right: index < 3 ? 8 : 0),
+                    decoration: BoxDecoration(
+                      color: index <= _currentStep
+                          ? Theme.of(context).primaryColor
+                          : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+          
           Expanded(
             child: PageView(
               controller: _pageController,
               physics: const NeverScrollableScrollPhysics(),
               children: [
-                _buildConnectStep(theme),
-                _buildDeviceInfoStep(theme),
-                _buildWiFiConfigStep(theme),
-                _buildDeviceSettingsStep(theme),
-                _buildCompleteSetupStep(theme),
+                _buildESP32ScanStep(),
+                _buildWiFiConfigStep(),
+                _buildWaitingStep(),
+                _buildSuccessStep(),
               ],
             ),
           ),
-          _buildBottomActions(theme),
         ],
       ),
     );
   }
 
-  Widget _buildProgressIndicator(ThemeData theme) {
-    return Container(
+  Widget _buildESP32ScanStep() {
+    return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: List.generate(_stepTitles.length, (index) {
-          final isActive = index == _currentStep;
-          final isCompleted = index < _currentStep;
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Step 1: Connect to ESP32',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Make sure your ESP32 device is powered on and in setup mode. Look for WiFi networks starting with "ESP32-Setup-".',
+          ),
+          const SizedBox(height: 24),
           
-          return Expanded(
-            child: Container(
-              height: 4,
-              margin: EdgeInsets.only(right: index < _stepTitles.length - 1 ? 8 : 0),
-              decoration: BoxDecoration(
-                color: isCompleted || isActive
-                    ? theme.primaryColor
-                    : theme.colorScheme.outline,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildConnectStep(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.wifi,
-            size: 80,
-            color: theme.primaryColor,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Connect to Device',
-            style: theme.textTheme.headlineSmall,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          if (widget.setupDevice != null) ...[
-            Text(
-              'Please connect to the WiFi network:',
-              style: theme.textTheme.bodyLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
+          if (_errorMessage != null)
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
+                color: Colors.red[50],
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red[200]!),
               ),
-              child: Text(
-                widget.setupDevice!.ssid,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onPrimaryContainer,
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline, color: Colors.red[600]),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(_errorMessage!, style: TextStyle(color: Colors.red[600]))),
+                ],
+              ),
+            ),
+          
+          if (_errorMessage != null) const SizedBox(height: 16),
+          
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (_esp32Networks.isEmpty)
+            Column(
+        children: [
+                const Text('No ESP32 networks found.'),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _scanForESP32Networks,
+                  child: const Text('Scan Again'),
                 ),
+              ],
+            )
+          else
+            Expanded(
+              child: ListView.builder(
+                itemCount: _esp32Networks.length,
+                itemBuilder: (context, index) {
+                  final network = _esp32Networks[index];
+                  return Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.wifi),
+                      title: Text(network),
+                      subtitle: const Text('ESP32 Setup Network'),
+                      trailing: const Icon(Icons.arrow_forward),
+                      onTap: () => _connectToESP32Network(network),
+                    ),
+                  );
+                },
               ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              '1. Go to WiFi settings\n'
-              '2. Connect to the network above\n'
-              '3. Return to this app',
-              style: theme.textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-          ] else ...[
-            Text(
-              'Please connect to your ESP32 device\'s WiFi hotspot:\n\n'
-              'Network name starts with:\n'
-              '"ESP32-AirMonitor-Setup"',
-              style: theme.textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-          ],
         ],
       ),
     );
   }
 
-  Widget _buildDeviceInfoStep(ThemeData theme) {
+  Widget _buildWiFiConfigStep() {
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (_isLoading) ...[
-            const Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Getting device information...'),
-                  ],
-                ),
-              ),
-            ),
-          ] else if (_deviceInfo != null) ...[
-            Icon(
-              Icons.sensors,
-              size: 80,
-              color: theme.primaryColor,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Device Found!',
-              style: theme.textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 24),
-            _buildInfoCard('Device ID', _deviceInfo!.deviceId, theme),
-            _buildInfoCard('MAC Address', _deviceInfo!.macAddress, theme),
-            _buildInfoCard('Firmware', _deviceInfo!.firmwareVersion, theme),
-            _buildInfoCard('Hardware', _deviceInfo!.hardwareVersion, theme),
-            _buildInfoCard('Chip Model', _deviceInfo!.chipModel, theme),
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Capabilities',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: _deviceInfo!.capabilities.map((capability) {
-                        return Chip(
-                          label: Text(capability),
-                          backgroundColor: theme.colorScheme.primaryContainer,
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ] else ...[
-            const Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline, size: 80, color: Colors.red),
-                    SizedBox(height: 16),
-                    Text('Could not connect to device'),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWiFiConfigStep(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Icon(
-            Icons.wifi_outlined,
-            size: 80,
-            color: theme.primaryColor,
+          const Text(
+            'Step 2: Configure WiFi',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
+          const SizedBox(height: 16),
+          Text('Connected to: $_selectedESP32Network'),
           const SizedBox(height: 24),
-          Text(
-            'WiFi Configuration',
-            style: theme.textTheme.headlineSmall,
-            textAlign: TextAlign.center,
-          ),
+          
+          const Text('Select your home WiFi network:'),
+          const SizedBox(height: 8),
+          
+          if (_wifiNetworks.isEmpty)
+            const CircularProgressIndicator()
+          else
+            DropdownButtonFormField<String>(
+              value: _selectedWiFiNetwork,
+              decoration: const InputDecoration(
+                labelText: 'WiFi Network',
+                border: OutlineInputBorder(),
+              ),
+              items: _wifiNetworks.map((network) {
+                final ssid = network['ssid'] as String;
+                final rssi = network['rssi'] as int;
+                return DropdownMenuItem(
+                  value: ssid,
+                  child: Text('$ssid (${rssi}dBm)'),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedWiFiNetwork = value;
+                });
+              },
+            ),
+          
           const SizedBox(height: 16),
-          Text(
-            'Enter your home WiFi credentials to connect the device to your network.',
-            style: theme.textTheme.bodyMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          CustomTextField(
-            controller: _wifiSSIDController,
-            labelText: 'WiFi Network Name (SSID)',
-            prefixIcon: Icons.wifi,
-            textInputAction: TextInputAction.next,
-          ),
-          const SizedBox(height: 16),
-          CustomTextField(
+          
+          TextField(
             controller: _wifiPasswordController,
+            decoration: const InputDecoration(
             labelText: 'WiFi Password',
-            prefixIcon: Icons.lock,
+              border: OutlineInputBorder(),
+            ),
             obscureText: true,
-            textInputAction: TextInputAction.done,
           ),
-          if (_errorMessage != null) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _errorMessage!,
-                style: TextStyle(color: theme.colorScheme.onErrorContainer),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDeviceSettingsStep(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Icon(
-            Icons.settings,
-            size: 80,
-            color: theme.primaryColor,
-          ),
+          
           const SizedBox(height: 24),
-          Text(
-            'Device Settings',
-            style: theme.textTheme.headlineSmall,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Give your device a name and specify its location.',
-            style: theme.textTheme.bodyMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          CustomTextField(
-            controller: _deviceNameController,
-            labelText: 'Device Name',
-            prefixIcon: Icons.label,
-            textInputAction: TextInputAction.next,
-          ),
-          const SizedBox(height: 16),
-          CustomTextField(
-            controller: _locationController,
-            labelText: 'Location',
-            prefixIcon: Icons.location_on,
-            textInputAction: TextInputAction.done,
-            hintText: 'e.g., Living Room, Bedroom, Kitchen',
-          ),
-          if (_errorMessage != null) ...[
-            const SizedBox(height: 16),
+          
+          if (_errorMessage != null)
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: theme.colorScheme.errorContainer,
+                color: Colors.red[50],
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red[200]!),
               ),
-              child: Text(
-                _errorMessage!,
-                style: TextStyle(color: theme.colorScheme.onErrorContainer),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline, color: Colors.red[600]),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(_errorMessage!, style: TextStyle(color: Colors.red[600]))),
+                ],
               ),
             ),
-          ],
+          
+          const Spacer(),
+          
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _configureDevice,
+              child: _isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Configure Device'),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCompleteSetupStep(ThemeData theme) {
+  Widget _buildWaitingStep() {
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (_isLoading) ...[
-            const CircularProgressIndicator(),
-            const SizedBox(height: 24),
-            Text(
-              'Completing setup...',
-              style: theme.textTheme.titleMedium,
+          const Text(
+            'Step 3: Connecting Device',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 32),
+          
+          const CircularProgressIndicator(),
+          const SizedBox(height: 24),
+          
+          const Text(
+            'Please wait while the device connects to your WiFi network and registers with the system...',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          
+          if (_userKey != null)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Column(
+                children: [
+                  const Text('Pairing Code:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(_userKey!, style: const TextStyle(fontFamily: 'monospace')),
+                ],
+              ),
             ),
+          
+          if (_errorMessage != null) ...[
             const SizedBox(height: 16),
-            Text(
-              'This may take a few moments while the device connects to your WiFi and registers with the cloud.',
-              style: theme.textTheme.bodyMedium,
-              textAlign: TextAlign.center,
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red[200]!),
+              ),
+              child: Text(_errorMessage!, style: TextStyle(color: Colors.red[600])),
             ),
-          ] else ...[
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSuccessStep() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
             Icon(
-              Icons.check_circle_outline,
-              size: 80,
-              color: theme.primaryColor,
+            Icons.check_circle,
+            size: 64,
+            color: Colors.green[600],
             ),
             const SizedBox(height: 24),
-            Text(
-              'Ready to Complete',
-              style: theme.textTheme.headlineSmall,
+          
+          const Text(
+            'Device Added Successfully!',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            Text(
-              'Review your settings and complete the setup.',
-              style: theme.textTheme.bodyMedium,
+          
+          const Text(
+            'Your ESP32 device has been successfully added to your account. You can now monitor air quality data in real-time.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Setup Summary',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildSummaryRow('Device Name', _deviceNameController.text, theme),
-                    _buildSummaryRow('Location', _locationController.text, theme),
-                    _buildSummaryRow('WiFi Network', _wifiSSIDController.text, theme),
-                    if (_deviceInfo != null)
-                      _buildSummaryRow('Device ID', _deviceInfo!.deviceId, theme),
-                  ],
-                ),
-              ),
-            ),
-            if (_errorMessage != null) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  _errorMessage!,
-                  style: TextStyle(color: theme.colorScheme.onErrorContainer),
-                ),
-              ),
-            ],
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(String label, String value, ThemeData theme) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            Expanded(
-              flex: 2,
-              child: Text(
-                label,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 3,
-              child: Text(
-                value,
-                style: theme.textTheme.bodyMedium,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSummaryRow(String label, String value, ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              value,
-              style: theme.textTheme.bodyMedium,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomActions(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          if (_currentStep > 0)
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _isLoading ? null : _goToPreviousStep,
-                child: const Text('Back'),
-              ),
-            ),
-          if (_currentStep > 0) const SizedBox(width: 16),
-          Expanded(
-            child: CustomButton(
-              text: _currentStep == _stepTitles.length - 1 ? 'Complete Setup' : 'Next',
-              onPressed: _isLoading ? null : _nextStep,
-              isLoading: _isLoading,
+          
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, true); // Return success
+              },
+              child: const Text('Continue'),
             ),
           ),
         ],

@@ -174,7 +174,6 @@ class _WiFiNetworkSelectorState extends State<WiFiNetworkSelector> {
         );
       
       case WiFiScanState.idle:
-      default:
         return const SizedBox.shrink();
     }
   }

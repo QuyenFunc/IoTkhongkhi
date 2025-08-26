@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import '../services/device_service.dart';
 import '../../../shared/models/device_model.dart';
 
@@ -290,6 +289,8 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
         return 'Arduino';
       case DeviceType.raspberryPi:
         return 'Raspberry Pi';
+      case DeviceType.airQuality:
+        return 'Cảm biến chất lượng không khí';
       case DeviceType.custom:
         return 'Tùy chỉnh';
       case DeviceType.other:

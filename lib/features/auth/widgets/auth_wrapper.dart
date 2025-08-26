@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../presentation/pages/login_page.dart';
 import '../../dashboard/presentation/pages/main_dashboard_page.dart';
+import '../../devices/services/device_pairing_service.dart';
 
 /// Authentication wrapper that handles user authentication state
 /// and routes users to appropriate screens based on their auth status
@@ -66,8 +68,10 @@ class AuthWrapper extends StatelessWidget {
         final User? user = snapshot.data;
         
         if (user != null) {
-          // User is signed in, show dashboard
-          return const MainDashboardPage();
+          // User is signed in, show dashboard with device pairing service
+          return const DevicePairingWrapper(
+            child: MainDashboardPage(),
+          );
         } else {
           // User is not signed in, show login page
           return const LoginPage();
@@ -94,6 +98,55 @@ class AuthStateProvider extends StatelessWidget {
         return child;
       },
     );
+  }
+}
+
+/// Device Pairing Service Wrapper
+/// Manages DevicePairingService lifecycle based on user authentication
+class DevicePairingWrapper extends StatefulWidget {
+  final Widget child;
+
+  const DevicePairingWrapper({
+    super.key,
+    required this.child,
+  });
+
+  @override
+  State<DevicePairingWrapper> createState() => _DevicePairingWrapperState();
+}
+
+class _DevicePairingWrapperState extends State<DevicePairingWrapper> {
+  final DevicePairingService _pairingService = DevicePairingService();
+
+  @override
+  void initState() {
+    super.initState();
+    _startPairingService();
+  }
+
+  @override
+  void dispose() {
+    _pairingService.dispose();
+    super.dispose();
+  }
+
+  void _startPairingService() async {
+    // Note: Device pairing service now uses user-specific listeners
+    // Started when needed in device setup screen
+    try {
+      if (kDebugMode) {
+        print('🔗 Device pairing service ready');
+      }
+    } catch (e) {
+      if (mounted) {
+        debugPrint('❌ Failed to start device pairing service: $e');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
   }
 }
 

@@ -145,7 +145,7 @@ class WiFiSetupService {
         accessPoints = await completer.future;
       } finally {
         subscription.cancel();
-        timeoutTimer?.cancel();
+        timeoutTimer.cancel();
       }
 
       if (kDebugMode) {

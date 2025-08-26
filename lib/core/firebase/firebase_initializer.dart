@@ -135,10 +135,10 @@ class FirebaseInitializer {
   /// Print current configuration
   static void printConfigInfo() {
     if (kDebugMode) {
-      print('🔍 Firebase Configuration:');
+      debugPrint('🔍 Firebase Configuration:');
       final config = getConfigInfo();
       config.forEach((key, value) {
-        print('  $key: $value');
+        debugPrint('  $key: $value');
       });
     }
   }
