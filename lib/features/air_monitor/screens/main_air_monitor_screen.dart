@@ -8,6 +8,7 @@ import '../widgets/alerts_card.dart';
 import '../services/alert_service.dart';
 import 'history_screen.dart';
 import 'threshold_settings_screen.dart';
+import '../../voice_assistant/services/voice_assistant_service.dart';
 
 /// Màn hình chính của ứng dụng giám sát chất lượng không khí
 class MainAirMonitorScreen extends StatefulWidget {
@@ -85,6 +86,11 @@ class _MainAirMonitorScreenState extends State<MainAirMonitorScreen> {
             tooltip: 'Lịch sử',
           ),
           IconButton(
+            icon: const Icon(Icons.record_voice_over, color: Colors.green),
+            onPressed: () => _testVoiceAssistant(),
+            tooltip: 'Test Voice Assistant',
+          ),
+          IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () => _showSettingsDialog(),
             tooltip: 'Cài đặt',
@@ -149,6 +155,34 @@ class _MainAirMonitorScreenState extends State<MainAirMonitorScreen> {
         builder: (context) => const HistoryScreen(),
       ),
     );
+  }
+  
+  Future<void> _testVoiceAssistant() async {
+    try {
+      final voiceService = VoiceAssistantService();
+      await voiceService.initialize();
+      await voiceService.quickAirQualityCheck();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🎤 Voice Assistant đang hoạt động...'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Lỗi Voice Assistant: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   /// Show settings dialog

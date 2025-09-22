@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<actions>
+    <!-- Lệnh đơn giản nhất chỉ để mở app -->
+    <action intentName="actions.intent.OPEN_APP_FEATURE">
+        <fulfillment urlTemplate="airquality://main/air_quality" />
+        
+        <parameter name="feature.name">
+            <entity-set-reference entitySetId="AirQualityFeatures"/>
+        </parameter>
+    </action>
+</actions>
+
+<!-- Entity set đơn giản -->
+<entity-set entitySetId="AirQualityFeatures">
+    <entity 
+        name="kiểm tra chất lượng không khí"
+        identifier="air_quality_check" />
+    <entity 
+        name="chất lượng không khí"
+        identifier="air_quality_check" />
+    <entity 
+        name="kiểm tra không khí"
+        identifier="air_quality_check" />
+</entity-set>

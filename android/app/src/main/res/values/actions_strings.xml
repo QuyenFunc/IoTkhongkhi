@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Từ khóa cho lệnh "mở kiểm tra chất lượng không khí" -->
+    <string-array name="air_quality_synonyms">
+        <item>mở kiểm tra chất lượng không khí</item>
+        <item>kiểm tra chất lượng không khí</item>
+        <item>mở kiểm tra không khí</item>
+        <item>kiểm tra không khí</item>
+        <item>chất lượng không khí</item>
+        <item>không khí trong phòng</item>
+        <item>không khí</item>
+        <item>xem chất lượng không khí</item>
+        <item>check không khí</item>
+        <item>đo không khí</item>
+    </string-array>
+</resources>

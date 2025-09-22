@@ -24,6 +24,7 @@ import 'package:path_provider_foundation/path_provider_foundation.dart';
 import 'package:shared_preferences_foundation/shared_preferences_foundation.dart';
 import 'package:sqflite_darwin/sqflite_darwin.dart';
 import 'package:url_launcher_ios/url_launcher_ios.dart';
+import 'package:app_links_linux/app_links_linux.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:file_picker/file_picker.dart';
@@ -56,6 +57,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider_windows/path_provider_windows.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences_windows/shared_preferences_windows.dart';
+import 'package:speech_to_text_windows/speech_to_text_windows.dart';
 import 'package:url_launcher_windows/url_launcher_windows.dart';
 
 @pragma('vm:entry-point')
@@ -228,6 +230,15 @@ class _PluginRegistrant {
       }
 
     } else if (Platform.isLinux) {
+      try {
+        AppLinksPluginLinux.registerWith();
+      } catch (err) {
+        print(
+          '`app_links_linux` threw an error: $err. '
+          'The app may not function as expected until you remove this plugin from pubspec.yaml'
+        );
+      }
+
       try {
         ConnectivityPlusLinuxPlugin.registerWith();
       } catch (err) {
@@ -514,6 +525,15 @@ class _PluginRegistrant {
       } catch (err) {
         print(
           '`shared_preferences_windows` threw an error: $err. '
+          'The app may not function as expected until you remove this plugin from pubspec.yaml'
+        );
+      }
+
+      try {
+        SpeechToTextWindows.registerWith();
+      } catch (err) {
+        print(
+          '`speech_to_text_windows` threw an error: $err. '
           'The app may not function as expected until you remove this plugin from pubspec.yaml'
         );
       }

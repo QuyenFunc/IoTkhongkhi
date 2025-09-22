@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:firebase_database/firebase_database.dart';
 import '../../../../core/routes/app_routes.dart';
 import '../../../user/services/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../devices/screens/device_list_screen.dart';
 import '../../../devices/screens/device_setup_screen.dart';
+import '../../services/dashboard_service.dart';
+import '../../../air_monitor/screens/main_air_monitor_screen.dart';
+import '../../../notifications/services/background_notification_service.dart';
+import '../../../voice_assistant/screens/voice_assistant_screen.dart';
+import '../../../voice_assistant/services/voice_assistant_service.dart';
 
 class MainDashboardPage extends StatefulWidget {
   const MainDashboardPage({super.key});
@@ -18,7 +25,7 @@ class _MainDashboardPageState extends State<MainDashboardPage> {
   final List<Widget> _pages = [
     const DashboardTab(),
     const DeviceListScreen(),
-    const MonitoringTab(),
+    const MainAirMonitorScreen(), // Use real air monitor instead of placeholder
     const AlertsTab(),
     const SettingsTab(),
   ];
@@ -64,6 +71,36 @@ class _MainDashboardPageState extends State<MainDashboardPage> {
           ),
         ],
       ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Test Quick Voice Commands
+          FloatingActionButton.small(
+            onPressed: () async {
+              final voiceService = VoiceAssistantService();
+              await voiceService.initialize();
+              await voiceService.quickAirQualityCheck();
+            },
+            backgroundColor: Colors.green,
+            child: const Icon(Icons.speed, color: Colors.white),
+            heroTag: "test_voice",
+          ),
+          const SizedBox(height: 8),
+          // Voice Assistant
+          FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const VoiceAssistantScreen(),
+                ),
+              );
+            },
+            child: const Icon(Icons.assistant),
+            heroTag: "voice_assistant",
+          ),
+        ],
+      ),
     );
   }
 }
@@ -79,11 +116,23 @@ class DashboardTab extends StatefulWidget {
 class _DashboardTabState extends State<DashboardTab> {
   String _userName = 'Người dùng';
   bool _isLoadingProfile = true;
+  final DashboardService _dashboardService = DashboardService();
 
   @override
   void initState() {
     super.initState();
     _loadUserProfile();
+    _initializeDashboard();
+  }
+
+  @override
+  void dispose() {
+    _dashboardService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initializeDashboard() async {
+    await _dashboardService.initialize();
   }
 
   Future<void> _loadUserProfile() async {
@@ -203,10 +252,17 @@ class _DashboardTabState extends State<DashboardTab> {
               
               const SizedBox(height: 16),
               
-              // Real stats will be loaded dynamically
-              StreamBuilder(
-                stream: null, // TODO: Add real device stats stream
+              // Real stats from Firebase
+              StreamBuilder<DashboardStats>(
+                stream: _dashboardService.statsStream,
                 builder: (context, snapshot) {
+                  final stats = snapshot.data ?? const DashboardStats(
+                    totalDevices: 0,
+                    onlineDevices: 0,
+                    offlineDevices: 0,
+                    activeAlerts: 0,
+                  );
+                  
                   return Column(
                     children: [
                       Row(
@@ -215,7 +271,7 @@ class _DashboardTabState extends State<DashboardTab> {
                             child: _buildStatCard(
                               context,
                               'Thiết bị',
-                              '0', // Real count from Firebase
+                              '${stats.totalDevices}',
                               Icons.devices,
                               Colors.blue,
                             ),
@@ -225,7 +281,7 @@ class _DashboardTabState extends State<DashboardTab> {
                             child: _buildStatCard(
                               context,
                               'Trực tuyến',
-                              '0', // Real online count
+                              '${stats.onlineDevices}',
                               Icons.wifi,
                               Colors.green,
                             ),
@@ -241,7 +297,7 @@ class _DashboardTabState extends State<DashboardTab> {
                             child: _buildStatCard(
                               context,
                               'Cảnh báo',
-                              '0', // Real alert count
+                              '${stats.activeAlerts}',
                               Icons.warning,
                               Colors.orange,
                             ),
@@ -251,7 +307,7 @@ class _DashboardTabState extends State<DashboardTab> {
                             child: _buildStatCard(
                               context,
                               'Ngoại tuyến',
-                              '0', // Real offline count
+                              '${stats.offlineDevices}',
                               Icons.wifi_off,
                               Colors.red,
                             ),
@@ -275,55 +331,82 @@ class _DashboardTabState extends State<DashboardTab> {
               
               const SizedBox(height: 16),
               
-              StreamBuilder(
-                stream: null, // TODO: Add real devices stream
+              StreamBuilder<List<DeviceInfo>>(
+                stream: _dashboardService.devicesStream,
                 builder: (context, snapshot) {
-                  // Show real devices or empty state
-                  return Column(
-                    children: [
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.devices_other,
-                                size: 48,
-                                color: theme.colorScheme.primary,
+                  final devices = snapshot.data ?? [];
+                  
+                  if (devices.isEmpty) {
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.devices_other,
+                              size: 48,
+                              color: theme.colorScheme.primary,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Chưa có thiết bị nào',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
                               ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Chưa có thiết bị nào',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Thêm thiết bị ESP32 đầu tiên của bạn để bắt đầu giám sát chất lượng không khí',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Thêm thiết bị ESP32 đầu tiên của bạn để bắt đầu giám sát chất lượng không khí',
-                                textAlign: TextAlign.center,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const DeviceSetupScreen(),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.add),
-                                label: const Text('Thêm thiết bị'),
-                              ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const DeviceSetupScreen(),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.add),
+                              label: const Text('Thêm thiết bị'),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    );
+                  }
+                  
+                  return Column(
+                    children: devices.map((device) => Card(
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: device.isOnline ? Colors.green : Colors.red,
+                          child: Icon(
+                            device.isOnline ? Icons.router : Icons.router_outlined,
+                            color: Colors.white,
+                          ),
+                        ),
+                        title: Text(device.name),
+                        subtitle: Text('${device.type} • ${device.statusText}'),
+                        trailing: device.isOnline 
+                            ? const Icon(Icons.wifi, color: Colors.green)
+                            : const Icon(Icons.wifi_off, color: Colors.red),
+                        onTap: () {
+                          // Navigate to device details or air monitor
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const MainAirMonitorScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    )).toList(),
                   );
                 },
               ),
@@ -666,17 +749,303 @@ class MonitoringTab extends StatelessWidget {
 
 }
 
-class AlertsTab extends StatelessWidget {
+class AlertsTab extends StatefulWidget {
   const AlertsTab({super.key});
 
   @override
+  State<AlertsTab> createState() => _AlertsTabState();
+}
+
+class _AlertsTabState extends State<AlertsTab> {
+  final DashboardService _dashboardService = DashboardService();
+  List<RecentAlert> _allAlerts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAlerts();
+  }
+
+  @override
+  void dispose() {
+    _dashboardService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initializeAlerts() async {
+    await _dashboardService.initialize();
+    _loadAlertHistory();
+  }
+
+  Future<void> _loadAlertHistory() async {
+    try {
+      // Load alert history from Firebase
+      final database = FirebaseDatabase.instance;
+      final snapshot = await database.ref('/air_monitor/alert_history').limitToLast(50).get();
+      
+      if (snapshot.exists && snapshot.value != null) {
+        final data = snapshot.value as Map;
+        List<RecentAlert> alerts = [];
+        
+        for (final entry in data.entries) {
+          try {
+            final alertData = Map<String, dynamic>.from(entry.value as Map);
+            final alert = RecentAlert(
+              id: entry.key,
+              message: alertData['reason'] as String? ?? '',
+              timestamp: alertData['timestamp'] as int? ?? 0,
+              severity: _getSeverityFromReason(alertData['reason'] as String? ?? ''),
+            );
+            alerts.add(alert);
+          } catch (e) {
+            if (kDebugMode) {
+              print('❌ Error parsing alert: $e');
+            }
+          }
+        }
+        
+        // Sort by timestamp descending (newest first)
+        alerts.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        
+        setState(() {
+          _allAlerts = alerts;
+        });
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error loading alert history: $e');
+      }
+    }
+  }
+
+  AlertSeverity _getSeverityFromReason(String reason) {
+    if (reason.toLowerCase().contains('pm2.5')) {
+      return AlertSeverity.critical;
+    } else if (reason.toLowerCase().contains('temperature')) {
+      return AlertSeverity.warning;
+    } else if (reason.toLowerCase().contains('humidity')) {
+      return AlertSeverity.info;
+    }
+    return AlertSeverity.warning;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Cảnh báo')),
-      body: const Center(
-        child: Text('Tab Cảnh báo - Sẽ được triển khai sau'),
+      appBar: AppBar(
+        title: const Text('🚨 Cảnh báo'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadAlertHistory,
+            tooltip: 'Làm mới',
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications_active),
+            onPressed: () async {
+              // Test notification
+              final notificationService = BackgroundNotificationService();
+              await notificationService.testNotification();
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('📱 Đã gửi thông báo thử nghiệm'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            tooltip: 'Test thông báo',
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadAlertHistory,
+        child: StreamBuilder<List<RecentAlert>>(
+          stream: _dashboardService.alertsStream,
+          builder: (context, snapshot) {
+            // Combine real-time alerts with historical alerts
+            final realtimeAlerts = snapshot.data ?? [];
+            final combinedAlerts = [...realtimeAlerts, ..._allAlerts];
+            
+            // Remove duplicates and sort
+            final uniqueAlerts = <String, RecentAlert>{};
+            for (final alert in combinedAlerts) {
+              uniqueAlerts[alert.id] = alert;
+            }
+            final sortedAlerts = uniqueAlerts.values.toList()
+              ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+            if (sortedAlerts.isEmpty) {
+              return _buildEmptyState(theme);
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: sortedAlerts.length,
+              itemBuilder: (context, index) {
+                final alert = sortedAlerts[index];
+                return _buildAlertCard(alert, theme);
+              },
+            );
+          },
+        ),
       ),
     );
+  }
+
+  Widget _buildEmptyState(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.notifications_none,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Không có cảnh báo',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tất cả thiết bị đang hoạt động bình thường',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[500],
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () async {
+                final notificationService = BackgroundNotificationService();
+                await notificationService.testNotification();
+                
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('📱 Đã gửi thông báo thử nghiệm'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.notifications_active),
+              label: const Text('Test thông báo'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAlertCard(RecentAlert alert, ThemeData theme) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: alert.severity.color.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Severity icon
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: alert.severity.color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _getSeverityIcon(alert.severity),
+                color: alert.severity.color,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            
+            // Alert content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: alert.severity.color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          alert.severity.displayName,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: alert.severity.color,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        alert.timeAgo,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    alert.message,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'ESP32 Air Monitor',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getSeverityIcon(AlertSeverity severity) {
+    switch (severity) {
+      case AlertSeverity.info:
+        return Icons.info;
+      case AlertSeverity.warning:
+        return Icons.warning;
+      case AlertSeverity.critical:
+        return Icons.error;
+    }
   }
 }
 

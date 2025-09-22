@@ -5,6 +5,8 @@ import 'firebase_options.dart';
 import 'features/air_monitor/viewmodels/main_viewmodel.dart';
 import 'features/air_monitor/viewmodels/threshold_viewmodel.dart';
 import 'features/air_monitor/screens/main_air_monitor_screen.dart';
+import 'features/notifications/services/background_notification_service.dart';
+import 'services/deep_link_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +14,14 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Initialize background notification service
+  final notificationService = BackgroundNotificationService();
+  await notificationService.initialize();
+  
+  // Initialize deep link service for Google Assistant
+  final deepLinkService = DeepLinkService();
+  await deepLinkService.initialize();
   
   runApp(const OptimizedAirMonitorApp());
 }

@@ -7,6 +7,7 @@
       "name": "air_quality",
       "version": "1.0.0+1",
       "dependencies": [
+        "app_links",
         "audioplayers",
         "cached_network_image",
         "connectivity_plus",
@@ -30,6 +31,7 @@
         "flutter_localizations",
         "flutter_riverpod",
         "flutter_svg",
+        "flutter_tts",
         "google_sign_in",
         "hive",
         "hive_flutter",
@@ -54,6 +56,7 @@
         "shared_preferences",
         "shimmer",
         "sign_in_with_apple",
+        "speech_to_text",
         "sqflite",
         "syncfusion_flutter_charts",
         "url_launcher",
@@ -701,6 +704,39 @@
         "firebase_core_web",
         "flutter",
         "meta"
+      ]
+    },
+    {
+      "name": "app_links",
+      "version": "6.4.1",
+      "dependencies": [
+        "app_links_linux",
+        "app_links_platform_interface",
+        "app_links_web",
+        "flutter"
+      ]
+    },
+    {
+      "name": "flutter_tts",
+      "version": "4.2.3",
+      "dependencies": [
+        "flutter",
+        "flutter_web_plugins"
+      ]
+    },
+    {
+      "name": "speech_to_text",
+      "version": "7.3.0",
+      "dependencies": [
+        "clock",
+        "flutter",
+        "flutter_web_plugins",
+        "json_annotation",
+        "meta",
+        "pedantic",
+        "speech_to_text_platform_interface",
+        "speech_to_text_windows",
+        "web"
       ]
     },
     {
@@ -2083,6 +2119,55 @@
       ]
     },
     {
+      "name": "app_links_web",
+      "version": "1.0.4",
+      "dependencies": [
+        "app_links_platform_interface",
+        "flutter",
+        "flutter_web_plugins",
+        "web"
+      ]
+    },
+    {
+      "name": "app_links_platform_interface",
+      "version": "2.0.2",
+      "dependencies": [
+        "flutter",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "app_links_linux",
+      "version": "1.0.3",
+      "dependencies": [
+        "app_links_platform_interface",
+        "flutter",
+        "gtk"
+      ]
+    },
+    {
+      "name": "speech_to_text_windows",
+      "version": "1.0.0+beta.8",
+      "dependencies": [
+        "flutter",
+        "speech_to_text_platform_interface"
+      ]
+    },
+    {
+      "name": "pedantic",
+      "version": "1.11.1",
+      "dependencies": []
+    },
+    {
+      "name": "speech_to_text_platform_interface",
+      "version": "2.3.0",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
       "name": "synchronized",
       "version": "3.4.0",
       "dependencies": []
@@ -2386,6 +2471,15 @@
       "dependencies": [
         "meta",
         "web"
+      ]
+    },
+    {
+      "name": "gtk",
+      "version": "2.1.0",
+      "dependencies": [
+        "ffi",
+        "flutter",
+        "meta"
       ]
     },
     {
