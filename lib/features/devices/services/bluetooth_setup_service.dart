@@ -213,18 +213,7 @@ class BluetoothSetupService {
         }
       }
 
-      // Add mock device for testing if no real devices found
-      if (esp32Devices.isEmpty) {
-        if (kDebugMode) {
-          print('🔵 No ESP32 devices found, adding mock device for testing');
-        }
-        esp32Devices.add(ESP32BluetoothDevice(
-          name: 'ESP32-BLK-AirMonitor-TEST123',
-          address: '00:11:22:33:44:55',
-          rssi: -45,
-          isConnectable: true,
-        ));
-      }
+      // Production: Only return real ESP32 devices
 
       return esp32Devices;
     } catch (e) {

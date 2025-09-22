@@ -1,0 +1,107 @@
+{
+  "simplified_firebase_structure": {
+    "comment": "Cấu trúc Firebase đơn giản không cần tài khoản user",
+    
+    "devices": {
+      "{deviceId}": {
+        "deviceId": "ESP32-AABBCCDDEEFF",
+        "deviceName": "Air Quality Monitor",
+        "location": "Living Room",
+        "macAddress": "AA:BB:CC:DD:EE:FF",
+        "ipAddress": "192.168.1.100",
+        "wifiSSID": "ADMIN-PC 9549",
+        "status": "online",
+        "lastSeen": "timestamp",
+        "firmware": "1.0.0",
+        "createdAt": "timestamp"
+      }
+    },
+    
+    "sensorData": {
+      "{deviceId}": {
+        "latest": {
+          "timestamp": "timestamp",
+          "deviceId": "ESP32-AABBCCDDEEFF",
+          "temperature": 25.5,
+          "humidity": 65.2,
+          "airQuality": 45.8,
+          "pm25": 12.3,
+          "pm10": 23.4,
+          "co2": 400.5,
+          "status": "online",
+          "battery": 85,
+          "rssi": -45
+        },
+        "history": {
+          "{timestamp}": {
+            "timestamp": "timestamp",
+            "temperature": 25.5,
+            "humidity": 65.2,
+            "airQuality": 45.8,
+            "pm25": 12.3,
+            "pm10": 23.4,
+            "co2": 400.5
+          }
+        }
+      }
+    },
+    
+    "deviceCommands": {
+      "{deviceId}": {
+        "restart": {
+          "command": "restart",
+          "value": true,
+          "timestamp": "timestamp",
+          "status": "pending"
+        },
+        "ledControl": {
+          "command": "ledEnabled",
+          "value": true,
+          "timestamp": "timestamp",
+          "status": "completed"
+        },
+        "updateInterval": {
+          "command": "updateInterval",
+          "value": 30,
+          "timestamp": "timestamp",
+          "status": "pending"
+        }
+      }
+    },
+    
+    "alertThresholds": {
+      "{deviceId}": {
+        "temperature": {
+          "min": 15.0,
+          "max": 35.0,
+          "enabled": true
+        },
+        "humidity": {
+          "min": 30.0,
+          "max": 80.0,
+          "enabled": true
+        },
+        "airQuality": {
+          "min": 0.0,
+          "max": 50.0,
+          "enabled": true
+        }
+      }
+    },
+    
+    "alerts": {
+      "{deviceId}": {
+        "{alertId}": {
+          "alertId": "alert_1234567890",
+          "deviceId": "ESP32-AABBCCDDEEFF", 
+          "type": "temperature_high",
+          "message": "Temperature exceeded 35°C",
+          "value": 37.2,
+          "threshold": 35.0,
+          "timestamp": "timestamp",
+          "acknowledged": false
+        }
+      }
+    }
+  }
+}

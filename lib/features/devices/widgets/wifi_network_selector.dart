@@ -61,9 +61,9 @@ class _WiFiNetworkSelectorState extends State<WiFiNetworkSelector> {
       await _wifiScanner.startScan();
     } else {
       if (kDebugMode) {
-        print('📡 WiFi scan not supported, using mock data');
+        print('❌ WiFi scan not supported on this device');
       }
-      await _wifiScanner.startMockScan();
+      // No fallback to mock data in production
     }
   }
 

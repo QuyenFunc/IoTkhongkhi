@@ -29,8 +29,16 @@ class _DeviceSensorDataWidgetState extends State<DeviceSensorDataWidget> {
   }
 
   void _listenToSensorData() {
+    if (kDebugMode) {
+      print('🎯 Widget starting to listen for device: ${widget.deviceId}');
+    }
+    
     _pairingService.listenToDeviceData(widget.deviceId).listen(
       (data) {
+        if (kDebugMode) {
+          print('📱 Widget received sensor data for ${widget.deviceId}: $data');
+        }
+        
         if (mounted) {
           setState(() {
             _sensorData = data;
@@ -40,14 +48,21 @@ class _DeviceSensorDataWidgetState extends State<DeviceSensorDataWidget> {
                 final timestamp = int.tryParse(data['timestamp'].toString());
                 if (timestamp != null) {
                   _lastUpdate = DateTime.fromMillisecondsSinceEpoch(timestamp);
+                  if (kDebugMode) {
+                    print('📅 Last update time: $_lastUpdate');
+                  }
                 }
               } catch (e) {
                 if (kDebugMode) {
-                  print('Error parsing timestamp: $e');
+                  print('❌ Error parsing timestamp: $e');
                 }
               }
             }
           });
+          
+          if (kDebugMode) {
+            print('📊 Widget state updated - Online: $_isOnline, Data: ${_sensorData != null}');
+          }
         }
       },
       onError: (error) {

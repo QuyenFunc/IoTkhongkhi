@@ -1,0 +1,60 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": true,
+    
+    "devices": {
+      ".indexOn": ["status", "lastSeen"],
+      "$deviceId": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['deviceId', 'deviceName'])"
+      }
+    },
+    
+    "sensorData": {
+      ".indexOn": ["timestamp"],
+      "$deviceId": {
+        ".read": true,
+        ".write": true,
+        
+        "latest": {
+          ".validate": "newData.hasChildren(['timestamp', 'deviceId', 'temperature', 'humidity', 'airQuality']) && newData.child('deviceId').val() === $deviceId"
+        },
+        
+        "history": {
+          ".indexOn": ["timestamp"],
+          "$timestamp": {
+            ".validate": "newData.hasChildren(['timestamp', 'temperature', 'humidity', 'airQuality'])"
+          }
+        }
+      }
+    },
+    
+    "deviceCommands": {
+      "$deviceId": {
+        ".read": true,
+        ".write": true,
+        
+        "$commandId": {
+          ".validate": "newData.hasChildren(['command', 'timestamp'])"
+        }
+      }
+    },
+    
+    "alertThresholds": {
+      "$deviceId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    
+    "alerts": {
+      "$deviceId": {
+        ".read": true,
+        ".write": true,
+        ".indexOn": ["timestamp", "acknowledged"]
+      }
+    }
+  }
+}

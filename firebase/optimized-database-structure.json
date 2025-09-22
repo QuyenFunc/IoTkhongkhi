@@ -1,0 +1,71 @@
+{
+  "optimized_firebase_structure": {
+    "comment": "Cấu trúc Firebase tối ưu hóa với đường dẫn /air_monitor gọn gàng",
+    
+    "air_monitor": {
+      "latest_data": {
+        "comment": "Dữ liệu mới nhất cho màn hình chính - cập nhật mỗi 5 giây",
+        "temperature": 25.5,
+        "humidity": 65.2,
+        "pm25": 45.8,
+        "timestamp": 1678886400000
+      },
+      
+      "history": {
+        "comment": "Lịch sử dữ liệu để vẽ biểu đồ - ghi mỗi 5 phút",
+        "-Nq_1678886400": {
+          "temp": 25.5,
+          "hum": 65.2,
+          "pm25": 45.8,
+          "ts": 1678886400000
+        },
+        "-Nq_1678886700": {
+          "temp": 25.6,
+          "hum": 65.1,
+          "pm25": 46.1,
+          "ts": 1678886700000
+        },
+        "-Nq_1678887000": {
+          "temp": 25.4,
+          "hum": 65.3,
+          "pm25": 44.9,
+          "ts": 1678887000000
+        }
+      },
+      
+      "status": {
+        "comment": "Trạng thái thiết bị - heartbeat mỗi 5 giây",
+        "is_online": true,
+        "last_seen": 1678886400000,
+        "device_info": {
+          "device_id": "ESP32-AABBCCDDEEFF",
+          "mac_address": "AA:BB:CC:DD:EE:FF",
+          "ip_address": "192.168.1.100",
+          "wifi_ssid": "ADMIN-PC 9549",
+          "firmware_version": "1.0.0"
+        }
+      },
+      
+      "control": {
+        "comment": "Nơi nhận lệnh điều khiển từ app",
+        "led_command": "OFF",
+        "last_command_time": 1678886400000
+      },
+      
+      "thresholds": {
+        "comment": "Ngưỡng cảnh báo có thể điều chỉnh từ app",
+        "temperature": {
+          "min": 15.0,
+          "max": 35.0
+        },
+        "humidity": {
+          "min": 30.0,
+          "max": 80.0
+        },
+        "pm25": {
+          "max": 50.0
+        }
+      }
+    }
+  }
+}

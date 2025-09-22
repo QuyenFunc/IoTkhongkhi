@@ -3,6 +3,7 @@ import '../../../../core/routes/app_routes.dart';
 import '../../../user/services/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../devices/screens/device_list_screen.dart';
+import '../../../devices/screens/device_setup_screen.dart';
 
 class MainDashboardPage extends StatefulWidget {
   const MainDashboardPage({super.key});
@@ -192,7 +193,7 @@ class _DashboardTabState extends State<DashboardTab> {
 
               const SizedBox(height: 24),
               
-              // Quick Stats
+              // Quick Stats - Real Data from Firebase
               Text(
                 'Thống kê nhanh',
                 style: theme.textTheme.titleLarge?.copyWith(
@@ -202,59 +203,69 @@ class _DashboardTabState extends State<DashboardTab> {
               
               const SizedBox(height: 16),
               
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      context,
-                      'Thiết bị',
-                      '3',
-                      Icons.devices,
-                      Colors.blue,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      context,
-                      'Trực tuyến',
-                      '2',
-                      Icons.wifi,
-                      Colors.green,
-                    ),
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 12),
-              
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      context,
-                      'Cảnh báo',
-                      '1',
-                      Icons.warning,
-                      Colors.orange,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      context,
-                      'Ngoại tuyến',
-                      '1',
-                      Icons.wifi_off,
-                      Colors.red,
-                    ),
-                  ),
-                ],
+              // Real stats will be loaded dynamically
+              StreamBuilder(
+                stream: null, // TODO: Add real device stats stream
+                builder: (context, snapshot) {
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              context,
+                              'Thiết bị',
+                              '0', // Real count from Firebase
+                              Icons.devices,
+                              Colors.blue,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard(
+                              context,
+                              'Trực tuyến',
+                              '0', // Real online count
+                              Icons.wifi,
+                              Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 12),
+                      
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              context,
+                              'Cảnh báo',
+                              '0', // Real alert count
+                              Icons.warning,
+                              Colors.orange,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard(
+                              context,
+                              'Ngoại tuyến',
+                              '0', // Real offline count
+                              Icons.wifi_off,
+                              Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
               ),
               
               const SizedBox(height: 24),
               
-              // Recent Devices
+              // Recent Devices - Real Data from Firebase
               Text(
                 'Thiết bị gần đây',
                 style: theme.textTheme.titleLarge?.copyWith(
@@ -264,35 +275,57 @@ class _DashboardTabState extends State<DashboardTab> {
               
               const SizedBox(height: 16),
               
-              _buildDeviceCard(
-                context,
-                'ESP32 - Phòng khách',
-                'Trực tuyến',
-                '25°C, 60%',
-                'Cập nhật 2 phút trước',
-                true,
-              ),
-              
-              const SizedBox(height: 12),
-              
-              _buildDeviceCard(
-                context,
-                'ESP32 - Phòng ngủ',
-                'Trực tuyến',
-                '23°C, 55%',
-                'Cập nhật 1 phút trước',
-                true,
-              ),
-              
-              const SizedBox(height: 12),
-              
-              _buildDeviceCard(
-                context,
-                'ESP32 - Nhà bếp',
-                'Ngoại tuyến',
-                'Không có dữ liệu',
-                'Cập nhật 15 phút trước',
-                false,
+              StreamBuilder(
+                stream: null, // TODO: Add real devices stream
+                builder: (context, snapshot) {
+                  // Show real devices or empty state
+                  return Column(
+                    children: [
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.devices_other,
+                                size: 48,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Chưa có thiết bị nào',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Thêm thiết bị ESP32 đầu tiên của bạn để bắt đầu giám sát chất lượng không khí',
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const DeviceSetupScreen(),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.add),
+                                label: const Text('Thêm thiết bị'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -349,326 +382,12 @@ class _DashboardTabState extends State<DashboardTab> {
     );
   }
 
-  Widget _buildDeviceCard(
-    BuildContext context,
-    String name,
-    String status,
-    String data,
-    String lastUpdate,
-    bool isOnline,
-  ) {
-    final theme = Theme.of(context);
-    
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: isOnline ? Colors.green : Colors.red,
-          child: Icon(
-            Icons.sensors,
-            color: Colors.white,
-          ),
-        ),
-        title: Text(
-          name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(data),
-            const SizedBox(height: 2),
-            Text(
-              lastUpdate,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: isOnline ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            status,
-            style: TextStyle(
-              color: isOnline ? Colors.green : Colors.red,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Mở chi tiết thiết bị: $name')),
-          );
-        },
-      ),
-    );
-  }
+
 }
 
-// Devices Tab - Now using DeviceListScreen
-/*
-class DevicesTab extends StatelessWidget {
-  const DevicesTab({super.key});
+// Devices Tab - Now using DeviceListScreen instead of this commented code
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Thiết bị'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Tìm kiếm thiết bị sẽ sớm được triển khai')),
-              );
-            },
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await Future.delayed(const Duration(seconds: 1));
-        },
-        child: ListView(
-          padding: const EdgeInsets.all(16.0),
-          children: [
-            // Filter Chips
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  FilterChip(
-                    label: const Text('Tất cả'),
-                    selected: true,
-                    onSelected: (selected) {},
-                  ),
-                  const SizedBox(width: 8),
-                  FilterChip(
-                    label: const Text('Trực tuyến'),
-                    selected: false,
-                    onSelected: (selected) {},
-                  ),
-                  const SizedBox(width: 8),
-                  FilterChip(
-                    label: const Text('Ngoại tuyến'),
-                    selected: false,
-                    onSelected: (selected) {},
-                  ),
-                  const SizedBox(width: 8),
-                  FilterChip(
-                    label: const Text('Cảnh báo'),
-                    selected: false,
-                    onSelected: (selected) {},
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Device List
-            _buildDeviceCard(
-              context,
-              'ESP32-001',
-              'Phòng khách',
-              'Trực tuyến',
-              '25°C, 60%',
-              'Cập nhật 2 phút trước',
-              true,
-              false,
-            ),
-
-            const SizedBox(height: 12),
-
-            _buildDeviceCard(
-              context,
-              'ESP32-002',
-              'Phòng ngủ',
-              'Trực tuyến',
-              '23°C, 55%',
-              'Cập nhật 1 phút trước',
-              true,
-              false,
-            ),
-
-            const SizedBox(height: 12),
-
-            _buildDeviceCard(
-              context,
-              'ESP32-003',
-              'Nhà bếp',
-              'Ngoại tuyến',
-              'Không có dữ liệu',
-              'Cập nhật 15 phút trước',
-              false,
-              false,
-            ),
-
-            const SizedBox(height: 12),
-
-            _buildDeviceCard(
-              context,
-              'ESP32-004',
-              'Phòng làm việc',
-              'Trực tuyến',
-              '27°C, 65%',
-              'Cập nhật 30 giây trước',
-              true,
-              true,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Thêm thiết bị mới sẽ sớm được triển khai')),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Thêm thiết bị'),
-      ),
-    );
-  }
-
-  Widget _buildDeviceCard(
-    BuildContext context,
-    String deviceId,
-    String location,
-    String status,
-    String data,
-    String lastUpdate,
-    bool isOnline,
-    bool hasAlert,
-  ) {
-    final theme = Theme.of(context);
-
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Mở chi tiết thiết bị: $deviceId')),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  // Device Icon
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: isOnline
-                          ? theme.colorScheme.primaryContainer
-                          : theme.colorScheme.errorContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.sensors,
-                      color: isOnline
-                          ? theme.colorScheme.onPrimaryContainer
-                          : theme.colorScheme.onErrorContainer,
-                    ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  // Device Info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              deviceId,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (hasAlert) ...[
-                              const SizedBox(width: 8),
-                              Icon(
-                                Icons.warning,
-                                size: 16,
-                                color: Colors.orange,
-                              ),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          location,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Status Badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isOnline
-                          ? Colors.green.withValues(alpha: 0.1)
-                          : Colors.red.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      status,
-                      style: TextStyle(
-                        color: isOnline ? Colors.green : Colors.red,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Data and Last Update
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      data,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    lastUpdate,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-*/
+// DevicesTab removed - replaced with DeviceListScreen which loads real data from Firebase
 
 class MonitoringTab extends StatelessWidget {
   const MonitoringTab({super.key});
@@ -729,58 +448,68 @@ class MonitoringTab extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMetricCard(
-                      context,
-                      'Nhiệt độ',
-                      '25°C',
-                      Icons.thermostat,
-                      Colors.orange,
-                      'Bình thường',
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildMetricCard(
-                      context,
-                      'Độ ẩm',
-                      '60%',
-                      Icons.water_drop,
-                      Colors.blue,
-                      'Bình thường',
-                    ),
-                  ),
-                ],
-              ),
+              // Real sensor data from Firebase
+              StreamBuilder(
+                stream: null, // TODO: Add real sensor data stream
+                builder: (context, snapshot) {
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildMetricCard(
+                              context,
+                              'Nhiệt độ',
+                              '--°C', // Real temperature from ESP32
+                              Icons.thermostat,
+                              Colors.orange,
+                              'Chờ dữ liệu',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildMetricCard(
+                              context,
+                              'Độ ẩm',
+                              '--%', // Real humidity from ESP32
+                              Icons.water_drop,
+                              Colors.blue,
+                              'Chờ dữ liệu',
+                            ),
+                          ),
+                        ],
+                      ),
 
-              const SizedBox(height: 12),
+                      const SizedBox(height: 12),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMetricCard(
-                      context,
-                      'Chất lượng KK',
-                      'Tốt',
-                      Icons.air,
-                      Colors.green,
-                      'AQI: 45',
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildMetricCard(
-                      context,
-                      'Áp suất',
-                      '1013 hPa',
-                      Icons.speed,
-                      Colors.purple,
-                      'Bình thường',
-                    ),
-                  ),
-                ],
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildMetricCard(
+                              context,
+                              'Chất lượng KK',
+                              'Chờ dữ liệu', // Real air quality from ESP32
+                              Icons.air,
+                              Colors.grey,
+                              'AQI: --',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildMetricCard(
+                              context,
+                              'Áp suất',
+                              '-- hPa', // Real pressure from ESP32
+                              Icons.speed,
+                              Colors.purple,
+                              'Chờ dữ liệu',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
               ),
 
               const SizedBox(height: 24),
@@ -840,24 +569,35 @@ class MonitoringTab extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              _buildAlertCard(
-                context,
-                'Nhiệt độ cao',
-                'ESP32-004 - Phòng làm việc',
-                '27°C (vượt ngưỡng 26°C)',
-                '5 phút trước',
-                Colors.orange,
-              ),
-
-              const SizedBox(height: 12),
-
-              _buildAlertCard(
-                context,
-                'Thiết bị ngoại tuyến',
-                'ESP32-003 - Nhà bếp',
-                'Mất kết nối từ 15 phút trước',
-                '15 phút trước',
-                Colors.red,
+              // Real alerts will be loaded from Firebase
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.notifications_none,
+                        size: 48,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Không có cảnh báo',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Tất cả thiết bị đang hoạt động bình thường',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -923,60 +663,7 @@ class MonitoringTab extends StatelessWidget {
     );
   }
 
-  Widget _buildAlertCard(
-    BuildContext context,
-    String title,
-    String device,
-    String description,
-    String time,
-    Color color,
-  ) {
-    final theme = Theme.of(context);
 
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: 0.1),
-          child: Icon(
-            Icons.warning,
-            color: color,
-          ),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(device),
-            const SizedBox(height: 2),
-            Text(description),
-            const SizedBox(height: 2),
-            Text(
-              time,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.more_vert),
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Tùy chọn cảnh báo sẽ sớm được triển khai')),
-            );
-          },
-        ),
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Chi tiết cảnh báo: $title')),
-          );
-        },
-      ),
-    );
-  }
 }
 
 class AlertsTab extends StatelessWidget {

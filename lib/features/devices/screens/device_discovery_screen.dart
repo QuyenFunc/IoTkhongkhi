@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/device_setup_service.dart';
 import 'device_setup_screen.dart';
 import 'bluetooth_setup_screen.dart';
-import 'wifi_setup_screen.dart';
+import 'device_setup_options_screen.dart';
 // QR Scanner temporarily disabled
 // import 'qr_scanner_screen.dart';
 
@@ -100,7 +100,7 @@ class _DeviceDiscoveryScreenState extends State<DeviceDiscoveryScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const WiFiSetupScreen(),
+        builder: (context) => const DeviceSetupOptionsScreen(),
       ),
     );
   }

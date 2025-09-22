@@ -136,34 +136,60 @@ class DevicePairingService {
         print('User: ${user.uid}');
       }
 
-      // Prepare device data for user's devices collection
+      // Prepare device data for user's devices collection (match DeviceModel schema)
+      final now = DateTime.now();
       final userDeviceData = {
-        'deviceId': deviceId,
-        'deviceName': customDeviceName ?? deviceData['deviceName'] ?? 'ESP32 Air Monitor',
-        'macAddress': deviceData['macAddress'],
-        'ipAddress': deviceData['ipAddress'],
-        'wifiSSID': deviceData['wifiSSID'],
-        'status': 'online',
-        'firmware': deviceData['firmware'] ?? '1.0.0',
+        'id': deviceId,
+        'name': customDeviceName ?? deviceData['deviceName'] ?? 'ESP32 Air Monitor',
         'location': 'Unknown',
-        'createdAt': DateTime.now().toIso8601String(),
-        'pairedAt': DateTime.now().toIso8601String(),
-        'commands': {
-          'restart': false,
-          'reset': false,
-          'updateInterval': 30,
-          'requestData': false,
-          'autoWarning': true,
+        'description': 'ESP32 Air Quality Monitor',
+        'type': 'esp32',
+        'status': 'active',
+        'ownerId': user.uid,
+        'groupId': null,
+        'createdAt': now.toIso8601String(),
+        'updatedAt': now.toIso8601String(),
+        'lastSeenAt': now.toIso8601String(),
+        'configuration': {
+          'mqttTopic': 'iot/devices/$deviceId/data',
+          'reportingInterval': 30,
+          'thresholds': {
+            'minTemperature': 15.0,
+            'maxTemperature': 35.0,
+            'minHumidity': 30.0,
+            'maxHumidity': 70.0,
+            'minPressure': 950.0,
+            'maxPressure': 1050.0,
+            'maxAirQualityIndex': 100,
+          },
+          'alertsEnabled': true,
+          'alertRecipients': [],
+          'customSettings': {},
+        },
+        'capabilities': ['temperature', 'humidity', 'air_quality', 'dust_sensor'],
+        'metadata': {
+          'macAddress': deviceData['macAddress'],
+          'ipAddress': deviceData['ipAddress'],
+          'wifiSSID': deviceData['wifiSSID'],
+          'firmware': deviceData['firmware'] ?? '1.0.0',
+          'pairedAt': now.toIso8601String(),
+          'commands': {
+            'restart': false,
+            'reset': false,
+            'updateInterval': 30,
+            'requestData': false,
+            'autoWarning': true,
+          }
         }
       };
 
       // Also register in deviceRegistry for Firebase rules
       final registryData = {
         'deviceId': deviceId,
-        'ownerUID': user.uid,
-        'deviceName': userDeviceData['deviceName'],
-        'status': 'online',
-        'registeredAt': DateTime.now().toIso8601String(),
+        'ownerId': user.uid,  // Changed from ownerUID to ownerId for consistency
+        'deviceName': userDeviceData['name'],
+        'status': 'active',
+        'registeredAt': now.toIso8601String(),
       };
 
       // Batch write to move device from pending to paired
@@ -179,6 +205,14 @@ class DevicePairingService {
       if (kDebugMode) {
         print('✅ Device paired successfully!');
         print('Device moved to: users/${user.uid}/devices/$deviceId');
+        print('📋 Device data structure:');
+        print('   Required fields check:');
+        print('   ✅ name: ${userDeviceData['name']}');
+        print('   ✅ location: ${userDeviceData['location']}');
+        print('   ✅ type: ${userDeviceData['type']}');
+        print('   ✅ status: ${userDeviceData['status']}');
+        print('   ✅ ownerId: ${userDeviceData['ownerId']}');
+        print('   ✅ createdAt: ${userDeviceData['createdAt']}');
       }
 
       return true;
@@ -233,16 +267,31 @@ class DevicePairingService {
     }
 
     return _database.ref('sensorData/$deviceId/latest').onValue.map((event) {
+      if (kDebugMode) {
+        print('📡 Firebase sensor data event for $deviceId:');
+        print('   Exists: ${event.snapshot.exists}');
+        print('   Value: ${event.snapshot.value}');
+      }
+      
       if (event.snapshot.exists && event.snapshot.value != null) {
         final data = Map<String, dynamic>.from(event.snapshot.value as Map<dynamic, dynamic>);
         
         if (kDebugMode) {
-          print('📈 Received sensor data for $deviceId: $data');
+          print('📈 Parsed sensor data for $deviceId:');
+          print('   Temperature: ${data['temperature']}°C');
+          print('   Humidity: ${data['humidity']}%');
+          print('   Air Quality: ${data['airQuality']} μg/m³');
+          print('   Status: ${data['status']}');
+          print('   Timestamp: ${data['timestamp']}');
         }
         
         return data;
+      } else {
+        if (kDebugMode) {
+          print('❌ No sensor data found for device $deviceId');
+        }
+        return null;
       }
-      return null;
     });
   }
 

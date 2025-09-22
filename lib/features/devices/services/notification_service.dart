@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -401,6 +402,50 @@ class NotificationService {
     await _localNotifications
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
+  }
+
+  /// Send alert notification
+  Future<void> sendAlertNotification({
+    required String title,
+    required String body,
+    required String deviceId,
+  }) async {
+    try {
+      // Show local notification
+      await _localNotifications.show(
+        deviceId.hashCode, // Use device ID hash as notification ID
+        title,
+        body,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'alerts',
+            'Cảnh báo cảm biến',
+            channelDescription: 'Thông báo khi giá trị cảm biến vượt ngưỡng',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            color: Colors.red,
+            playSound: true,
+            enableVibration: true,
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+            interruptionLevel: InterruptionLevel.active,
+          ),
+        ),
+        payload: deviceId,
+      );
+
+      if (kDebugMode) {
+        print('📨 Alert notification sent: $title');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error sending alert notification: $e');
+      }
+    }
   }
 
   /// Handle notification tap

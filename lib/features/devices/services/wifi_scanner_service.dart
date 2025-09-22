@@ -187,84 +187,9 @@ class WiFiScannerService {
     await startScan();
   }
 
-  /// Get mock WiFi networks for testing
-  List<WiFiNetworkInfo> getMockNetworks() {
-    return [
-      const WiFiNetworkInfo(
-        ssid: 'Home WiFi',
-        bssid: '00:11:22:33:44:55',
-        signalLevel: -45,
-        frequency: 2437,
-        isSecured: true,
-        securityType: 'WPA2',
-        signalStrength: 4,
-      ),
-      const WiFiNetworkInfo(
-        ssid: 'Office Network',
-        bssid: '00:11:22:33:44:56',
-        signalLevel: -55,
-        frequency: 5180,
-        isSecured: true,
-        securityType: 'WPA3',
-        signalStrength: 3,
-      ),
-      const WiFiNetworkInfo(
-        ssid: 'Guest WiFi',
-        bssid: '00:11:22:33:44:57',
-        signalLevel: -65,
-        frequency: 2462,
-        isSecured: false,
-        securityType: 'Open',
-        signalStrength: 2,
-      ),
-      const WiFiNetworkInfo(
-        ssid: 'Neighbor WiFi',
-        bssid: '00:11:22:33:44:58',
-        signalLevel: -75,
-        frequency: 2437,
-        isSecured: true,
-        securityType: 'WPA2',
-        signalStrength: 1,
-      ),
-      const WiFiNetworkInfo(
-        ssid: 'Weak Signal',
-        bssid: '00:11:22:33:44:59',
-        signalLevel: -85,
-        frequency: 5180,
-        isSecured: true,
-        securityType: 'WPA2',
-        signalStrength: 0,
-      ),
-    ];
-  }
+  // Mock methods removed - production only uses real WiFi scanning
 
-  /// Start mock scan for testing
-  Future<void> startMockScan() async {
-    if (kDebugMode) {
-      print('📡 Starting mock WiFi scan...');
-    }
 
-    _updateScanResult(WiFiScanResult.scanning());
-
-    // Simulate scan delay
-    await Future.delayed(const Duration(seconds: 2));
-
-    final mockNetworks = getMockNetworks();
-
-    if (kDebugMode) {
-      print('📡 Generated ${mockNetworks.length} mock networks:');
-      for (final network in mockNetworks) {
-        print('  - ${network.ssid} (${network.signalStrength} bars, ${network.securityType})');
-      }
-    }
-
-    _updateScanResult(WiFiScanResult.completed(mockNetworks));
-
-    if (kDebugMode) {
-      print('📡 Mock scan completed with ${mockNetworks.length} networks');
-      print('📡 Current scan result state: ${_currentResult.state}');
-    }
-  }
 
   /// Update scan result and notify listeners
   void _updateScanResult(WiFiScanResult result) {

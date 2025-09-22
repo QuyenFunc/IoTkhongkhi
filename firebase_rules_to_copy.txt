@@ -1,0 +1,122 @@
+{
+  "rules": {
+    "air_monitor": {
+      "latest_data": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['temperature', 'humidity', 'pm25', 'timestamp'])",
+        "temperature": {
+          ".validate": "newData.isNumber() && newData.val() >= -50 && newData.val() <= 100"
+        },
+        "humidity": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+        },
+        "pm25": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber()"
+        }
+      },
+      
+      "history": {
+        ".read": true,
+        ".write": true,
+        ".indexOn": ["ts"],
+        "$historyId": {
+          ".validate": "newData.hasChildren(['temp', 'hum', 'pm25', 'ts'])",
+          "temp": {
+            ".validate": "newData.isNumber() && newData.val() >= -50 && newData.val() <= 100"
+          },
+          "hum": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "pm25": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+          },
+          "ts": {
+            ".validate": "newData.isNumber()"
+          }
+        }
+      },
+      
+      "status": {
+        ".read": true,
+        ".write": true,
+        "is_online": {
+          ".validate": "newData.isBoolean()"
+        },
+        "last_seen": {
+          ".validate": "newData.isNumber()"
+        },
+        "device_info": {
+          ".read": true,
+          ".write": true
+        }
+      },
+      
+      "control": {
+        ".read": true,
+        ".write": true,
+        "led_command": {
+          ".validate": "newData.isString() && (newData.val() == 'ON' || newData.val() == 'OFF')"
+        },
+        "last_command_time": {
+          ".validate": "newData.isNumber()"
+        }
+      },
+      
+      "thresholds": {
+        ".read": true,
+        ".write": true,
+        "temperature": {
+          "min": {
+            ".validate": "newData.isNumber() && newData.val() >= -50 && newData.val() <= 50"
+          },
+          "max": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "enabled": {
+            ".validate": "newData.isBoolean()"
+          }
+        },
+        "humidity": {
+          "min": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "max": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "enabled": {
+            ".validate": "newData.isBoolean()"
+          }
+        },
+        "pm25": {
+          "min": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+          },
+          "max": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+          },
+          "enabled": {
+            ".validate": "newData.isBoolean()"
+          }
+        }
+      },
+      
+      "alert": {
+        ".read": true,
+        ".write": true,
+        "active": {
+          ".validate": "newData.isBoolean()"
+        },
+        "reason": {
+          ".validate": "newData.isString()"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    }
+  }
+}

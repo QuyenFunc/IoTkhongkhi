@@ -116,8 +116,8 @@ const char index_html[] PROGMEM = R"rawliteral(
           <h4>Mật khẩu</h4>
           <input type="text" id="pass" name="pass" placeholder="Your password ..">
 
-          <h4>Mã Token Blynk</h4>
-          <input type="text" id="token" name="token" placeholder="Your Token Blynk ..">
+          <h4>Mã Token Firebase</h4>
+          <input type="text" id="token" name="token" placeholder="Your Token Firebase ..">
           
           <hr>
 

@@ -42,6 +42,10 @@ dependencies:
   provider: ^6.1.2
   riverpod: ^2.5.1
   flutter_riverpod: ^2.5.1
+  
+  # Alert and Sound
+  vibration: ^2.0.0
+  audioplayers: ^6.0.0
 
   # Authentication & Firebase
   firebase_core: ^3.15.2
@@ -82,6 +86,9 @@ dependencies:
     git:
       url: https://github.com/edufolly/flutter_bluetooth_serial.git
       ref: master
+  
+  # Bluetooth Low Energy for ESP32 configuration
+  flutter_blue_plus: ^1.32.12
 
   # File Handling & Export
   path_provider: ^2.1.4
@@ -144,6 +151,7 @@ flutter:
     - assets/icons/
     - assets/animations/
     - assets/localization/
+    - assets/sounds/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

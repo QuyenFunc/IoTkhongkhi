@@ -208,12 +208,22 @@ class DeviceService {
             final deviceData = _convertDynamicMap(entry.value);
             deviceData['id'] = entry.key;
 
+            if (kDebugMode) {
+              print('🔍 Processing device: ${entry.key}');
+              print('   Available fields: ${deviceData.keys.toList()}');
+            }
+
             // Validate that this is a complete device record
             if (!_isValidDeviceRecord(deviceData)) {
               if (kDebugMode) {
                 print('❌ Skipping invalid device record ${entry.key}');
-                print('   Available fields: ${deviceData.keys.toList()}');
-                print('   Data: $deviceData');
+                print('   Missing required fields:');
+                final requiredFields = ['name', 'location', 'type', 'status', 'ownerId', 'createdAt'];
+                for (final field in requiredFields) {
+                  final hasField = deviceData.containsKey(field) && deviceData[field] != null;
+                  print('   ${hasField ? "✅" : "❌"} $field: ${deviceData[field]}');
+                }
+                print('   Raw data: $deviceData');
               }
               return null;
             }
